@@ -22,3 +22,11 @@ Migrate your site:
 ```
 ./manage.py migrate indicators
 ```
+
+## Importing data from xlsx files:
+
+```
+./manage.py import_indicators <path-to-xlsx-file>
+```
+
+This process might take some minutes depending on your file
