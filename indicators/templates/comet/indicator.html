@@ -81,7 +81,7 @@
             <div>
                 {% for slot in item|get_single_slot:"Data collection method" %}
                     <p>
-                        <a href="{% url 'aristotle_slots:similar_slots' slot.type.id %}?value={{slot.value}}">
+                        <a href="{% url 'aristotle_slots:similar_slots' slot.name %}?value={{slot.value}}">
                         {{slot.value}}
                         </a>
                     </p>

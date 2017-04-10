@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 import datetime
 from aristotle_mdr import models
 from aristotle_mdr.contrib.identifiers import models as MDR_ID
-from aristotle_mdr.contrib.slots.models import Slot, SlotDefinition
+from aristotle_mdr.contrib.slots.models import Slot
 from comet import models as comet
 from indicators import models as lo_models
 from mallard_qr import models as mallard_qr
@@ -124,61 +124,6 @@ class IndicatorImporter(object):
     def process_indicators(self):
         sheet = self.wb.get_sheet_by_name(self.SHEET_INDICATORS)
 
-        slot_type_toc, created = SlotDefinition.objects.get_or_create(
-            app_label='comet',
-            concept_type='indicator',
-            slot_name="Theory of Change",
-            cardinality=SlotDefinition.CARDINALITY.repeatable
-        )
-        slot_type_np, created = SlotDefinition.objects.get_or_create(
-            app_label='comet',
-            concept_type='indicator',
-            slot_name="No Poverty",
-            cardinality=SlotDefinition.CARDINALITY.repeatable
-        )
-        slot_type_question, created = SlotDefinition.objects.get_or_create(
-            app_label='comet',
-            concept_type='indicator',
-            slot_name="Question text",
-            cardinality=SlotDefinition.CARDINALITY.repeatable
-        )
-        slot_type_dcm, created = SlotDefinition.objects.get_or_create(
-            app_label='comet',
-            concept_type='indicator',
-            slot_name="Data collection method",
-            cardinality=SlotDefinition.CARDINALITY.repeatable
-        )
-        slot_type_mom, created = SlotDefinition.objects.get_or_create(
-            app_label='comet',
-            concept_type='indicator',
-            slot_name="Method of Measurement",
-            cardinality=SlotDefinition.CARDINALITY.repeatable
-        )
-        slot_type_tou, created = SlotDefinition.objects.get_or_create(
-            app_label='comet',
-            concept_type='indicator',
-            slot_name="Terms of use",
-            cardinality=SlotDefinition.CARDINALITY.repeatable
-        )
-        slot_type_lang, created = SlotDefinition.objects.get_or_create(
-            app_label='comet',
-            concept_type='indicator',
-            slot_name="Languages",
-            cardinality=SlotDefinition.CARDINALITY.repeatable
-        )
-        slot_type_pop, created = SlotDefinition.objects.get_or_create(
-            app_label='comet',
-            concept_type='indicator',
-            slot_name="Population",
-            cardinality=SlotDefinition.CARDINALITY.repeatable
-        )
-        slot_type_rat, created = SlotDefinition.objects.get_or_create(
-            app_label='comet',
-            concept_type='indicator',
-            slot_name="Rationale",
-            cardinality=SlotDefinition.CARDINALITY.repeatable
-        )
-
         for row in sheet.iter_rows(row_offset=1):
             if row[0].value is None:
                 continue
@@ -227,15 +172,15 @@ class IndicatorImporter(object):
             else:
                 print "No instrument", instument_name, instrument
 
-            self.text_to_slots(ind, get_col(row, 'Q').value, slot_type_np)
-            self.text_to_slots(ind, get_col(row, 'O').value, slot_type_toc)
-            self.text_to_slots(ind, get_col(row, 'H').value, slot_type_dcm)
-            self.text_to_slots(ind, get_col(row, 'C').value, slot_type_question, clean=True)
-            self.text_to_slots(ind, get_col(row, 'G').value, slot_type_mom, clean=True)
-            self.text_to_slots(ind, get_col(row, 'N').value, slot_type_tou)
-            self.text_to_slots(ind, get_col(row, 'J').value, slot_type_lang)
-            self.text_to_slots(ind, get_col(row, 'L').value, slot_type_pop)
-            self.text_to_slots(ind, get_col(row, 'M').value, slot_type_rat)
+            self.text_to_slots(ind, get_col(row, 'O').value, 'Theory of Change')
+            self.text_to_slots(ind, get_col(row, 'Q').value, 'No Poverty')
+            self.text_to_slots(ind, get_col(row, 'H').value, 'Data collection method')
+            self.text_to_slots(ind, get_col(row, 'C').value, 'Question text', clean=True)
+            self.text_to_slots(ind, get_col(row, 'G').value, 'Method of Measurement', clean=True)
+            self.text_to_slots(ind, get_col(row, 'N').value, 'Terms of use')
+            self.text_to_slots(ind, get_col(row, 'J').value, 'Languages')
+            self.text_to_slots(ind, get_col(row, 'L').value, 'Population')
+            self.text_to_slots(ind, get_col(row, 'M').value, 'Rationale')
 
             if get_col(row, 'P'):
                 goal_name = get_col(row, 'P').value
@@ -324,13 +269,14 @@ class IndicatorImporter(object):
         )
         return obj
 
-    def text_to_slots(self, item, col, slot_type, clean=False):
+    def text_to_slots(self, item, col, slot_name, slot_type='', clean=False):
         for val in col.split(';'):
             val = val.strip()
             if clean:
                 val = lb_2_p(val, sep="\n")
             if val:
                 obj, created = Slot.objects.get_or_create(
+                    name=slot_name,
                     type=slot_type,
                     concept=item,
                     value=val
