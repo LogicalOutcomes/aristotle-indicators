@@ -7,10 +7,10 @@ from comet import models as comet
 from indicators import models as lo_models
 from mallard_qr import models as mallard_qr
 from openpyxl import load_workbook
-from .utils import lb_2_p, get_col
+from .utils import lb_2_p, get_col, BaseImporter
 
 
-class IndicatorImporter(object):
+class IndicatorImporter(BaseImporter):
     """Import indicators from spreadsheet
     """
     DEFAULT_AUTHORITY_NAME = 'Logical Outcomes'
@@ -34,18 +34,6 @@ class IndicatorImporter(object):
         self.process_value_domains()
         self.process_indicators()
         self.process_data_elements()
-
-    def process_authorities(self):
-        self.authority, created = models.RegistrationAuthority.objects.get_or_create(
-            name=self.DEFAULT_AUTHORITY_NAME
-        )
-        self.authority_org = models.Organization.objects.get(
-            pk=self.authority.pk
-        )
-        self.authority_namespace, c = MDR_ID.Namespace.objects.get_or_create(
-            naming_authority=self.authority_org,
-            shorthand_prefix=self.DEFAULT_AUTHORITY_PREFIX
-        )
 
     def process_goals(self):
         sheet = self.wb.get_sheet_by_name(self.SHEET_GOALS)
