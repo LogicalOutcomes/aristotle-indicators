@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 import datetime
 import argparse
 from django.core.management.base import BaseCommand
-from indicators.importer import IndicatorImporter
+from indicators.importers.dhis2_indicators import IndicatorImporter
 
 
 class Command(BaseCommand):
