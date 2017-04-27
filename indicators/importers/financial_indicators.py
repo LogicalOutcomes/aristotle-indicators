@@ -1,8 +1,6 @@
 from __future__ import unicode_literals
 import datetime
 from aristotle_mdr import models
-from aristotle_mdr.contrib.identifiers import models as MDR_ID
-from aristotle_mdr.contrib.slots.models import Slot
 from comet import models as comet
 from indicators import models as lo_models
 from mallard_qr import models as mallard_qr
@@ -228,45 +226,3 @@ class IndicatorImporter(BaseImporter):
             if ind:
                 ind.numerators.add(de)
                 ind.save()
-
-    # Importer Helpers
-    def register(self, thing):
-        """Aristotle MDR regiter
-        """
-        models.Status.objects.get_or_create(
-            concept=thing,
-            registrationAuthority=self.authority,
-            registrationDate=self.DEFAULT_REGISTRATION_DATE,
-            state=models.STATES.recorded
-        )
-
-    def get_from_identifier(self, ident):
-        obj = MDR_ID.ScopedIdentifier.objects.filter(
-            namespace=self.authority_namespace,
-            identifier=ident
-        ).first()
-        if obj is None:
-            return None
-        else:
-            return obj.concept.item
-
-    def make_identifier(self, ident, item):
-        obj = MDR_ID.ScopedIdentifier.objects.create(
-            namespace=self.authority_namespace,
-            identifier=ident,
-            concept=item
-        )
-        return obj
-
-    def text_to_slots(self, item, col, slot_name, slot_type='', clean=False):
-        for val in col.split(';'):
-            val = val.strip()
-            if clean:
-                val = lb_2_p(val, sep="\n")
-            if val:
-                obj, created = Slot.objects.get_or_create(
-                    name=slot_name,
-                    type=slot_type,
-                    concept=item,
-                    value=val
-                )

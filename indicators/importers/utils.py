@@ -1,5 +1,6 @@
 from aristotle_mdr import models
 from aristotle_mdr.contrib.identifiers import models as MDR_ID
+from aristotle_mdr.contrib.slots.models import Slot
 
 
 class BaseImporter(object):
@@ -33,6 +34,37 @@ class BaseImporter(object):
             state=models.STATES.recorded
         )
 
+    def get_from_identifier(self, ident):
+        obj = MDR_ID.ScopedIdentifier.objects.filter(
+            namespace=self.authority_namespace,
+            identifier=ident
+        ).first()
+        if obj is None:
+            return None
+        else:
+            return obj.concept.item
+
+    def make_identifier(self, ident, item):
+        obj = MDR_ID.ScopedIdentifier.objects.create(
+            namespace=self.authority_namespace,
+            identifier=ident,
+            concept=item
+        )
+        return obj
+
+    def text_to_slots(self, item, col, slot_name, slot_type='', clean=False):
+        for val in col.split(';'):
+            val = val.strip()
+            if clean:
+                val = lb_2_p(val, sep="\n")
+            if val:
+                obj, created = Slot.objects.get_or_create(
+                    name=slot_name,
+                    type=slot_type,
+                    concept=item,
+                    value=val
+                )
+
 
 def get_col(row, col):
     for cell in row:
@@ -43,6 +75,6 @@ def get_col(row, col):
 
 def lb_2_p(txt, sep="\n\n"):
     if sep in txt:
-        return "<p>"+"</p><p>".join([l for l in txt.split(sep) if l != ""]) + "</p>"
+        return "<p>" + "</p><p>".join([lb for lb in txt.split(sep) if lb != ""]) + "</p>"
     else:
         return txt

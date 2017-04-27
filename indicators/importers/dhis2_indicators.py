@@ -3,7 +3,8 @@ from aristotle_mdr import models
 from aristotle_mdr.contrib.identifiers import models as MDR_ID
 from datetime import date
 from openpyxl import load_workbook
-from .utils import BaseImporter
+from .utils import BaseImporter, get_col
+from ..models import CategoryOption, Category, CategoryCombination
 
 
 class IndicatorImporter(BaseImporter):
@@ -26,39 +27,64 @@ class IndicatorImporter(BaseImporter):
 
     def process(self):
         self.process_authorities()
+        self.process_category_options()
         self.process_categories()
+        self.process_category_combitation()
+
+    def process_category_options(self):
+        sheet = self.wb.get_sheet_by_name(self.SHEET_CATEGORY_OPTIONS)
+        for row in sheet.iter_rows(row_offset=1):
+            if row[0].value is None:
+                continue
+
+            option, c = CategoryOption.objects.get_or_create(
+                code=get_col(row, 'C').value,
+                name=get_col(row, 'A').value,
+                short_name=get_col(row, 'D').value,
+            )
 
     def process_categories(self):
         sheet = self.wb.get_sheet_by_name(self.SHEET_CATEGORIES)
-        dt = self.define_data_type('Number')
-        value_domains = {}
 
-        for i, row in enumerate(sheet.iter_rows(row_offset=1)):
-            option_name = row[0].value
-            category_name = row[1].value
-            option_code = row[2].value
+        categories = []
 
-            val_dom, created = models.ValueDomain.objects.get_or_create(
-                name=category_name,
-                defaults={
-                    # "workgroup": wg,
-                    "definition": self.DEFAULT_DEFINITION,
-                    "data_type": dt,
-                }
+        for row in sheet.iter_rows(row_offset=1):
+            if row[0].value is None:
+                continue
+
+            category, c = Category.objects.get_or_create(
+                code=get_col(row, 'C').value,
+                name=get_col(row, 'A').value,
+                short_name=get_col(row, 'D').value,
             )
-            if created:
-                self.register(val_dom)
 
-            if category_name not in value_domains:
-                # clean all option when we process for the fist time a value domain
-                val_dom.permissiblevalue_set.all().delete()
-                value_domains[category_name] = [option_name]
-            else:
-                value_domains[category_name].append(option_name)
+            if category not in categories:
+                # remove all options from categories the first time we import it
+                categories.append(category)
+                category.options.clear()
 
-            models.PermissibleValue.objects.get_or_create(
-                valueDomain=val_dom,
-                value=len(value_domains[category_name]),
-                meaning=option_name,
-                order=len(value_domains[category_name])
+            option = CategoryOption.objects.get(code=get_col(row, 'E').value)
+            category.options.add(option)
+
+    def process_category_combitation(self):
+        sheet = self.wb.get_sheet_by_name(self.SHEET_CATEGORY_COMBOS)
+
+        category_combinations = []
+
+        for row in sheet.iter_rows(row_offset=1):
+            if row[0].value is None:
+                continue
+
+            category_combination, c = CategoryCombination.objects.get_or_create(
+                code=get_col(row, 'C').value,
+                name=get_col(row, 'A').value,
+                short_name=get_col(row, 'D').value,
             )
+
+            if category_combination not in category_combinations:
+                # remove all categories from category_combination the first time we import it
+                category_combinations.append(category_combination)
+                category_combination.categories.clear()
+
+            category = Category.objects.get(code=get_col(row, 'E').value)
+            category_combination.categories.add(category)
