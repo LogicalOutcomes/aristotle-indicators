@@ -12,21 +12,16 @@ register_concept(Instrument)
 register_concept(Goal)
 
 
-class CategoryOptionInline(admin.StackedInline):
-    model = CategoryOption
-
-
-class CategoryInline(admin.StackedInline):
-    model = Category
+@admin.register(CategoryOption)
+class CategoryOptionAdmin(admin.ModelAdmin):
+    list_display = ['code', 'short_name', 'name']
 
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ['code', 'short_name', 'name']
-    inlines = [CategoryOptionInline]
 
 
 @admin.register(CategoryCombination)
 class CategoryCombinationAdmin(admin.ModelAdmin):
     list_display = ['code', 'short_name', 'name']
-    inlines = [CategoryInline]

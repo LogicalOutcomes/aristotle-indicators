@@ -19,6 +19,7 @@ class BaseImporter(object):
 
     # Importer Helpers
     def define_data_type(self, name):
+        name = name.capitalize()
         dt, c = models.DataType.objects.get_or_create(name=name)
         if c:
             self.register(dt)
@@ -45,7 +46,7 @@ class BaseImporter(object):
             return obj.concept.item
 
     def make_identifier(self, ident, item):
-        obj = MDR_ID.ScopedIdentifier.objects.create(
+        obj, c = MDR_ID.ScopedIdentifier.objects.get_or_create(
             namespace=self.authority_namespace,
             identifier=ident,
             concept=item
@@ -53,6 +54,8 @@ class BaseImporter(object):
         return obj
 
     def text_to_slots(self, item, col, slot_name, slot_type='', clean=False):
+        if not col:
+            return
         for val in col.split(';'):
             val = val.strip()
             if clean:
@@ -66,11 +69,28 @@ class BaseImporter(object):
                 )
 
 
+def has_required_cols(row, *args):
+    if not row or len(row) < len(args):
+        return False
+    coords = [c.coordinate for c in row if c.value]
+    required = []
+    for col in args:
+        required += [col for c in coords if c.startswith(col)]
+    return len(required) == len(args)
+
+
 def get_col(row, col):
     for cell in row:
         if cell.value is not None:
             if cell.coordinate.startswith(col):
                 return cell
+
+
+def get_vcol(row, col):
+    cell = get_col(row, col)
+    if cell:
+        return cell.value
+    return None
 
 
 def lb_2_p(txt, sep="\n\n"):
