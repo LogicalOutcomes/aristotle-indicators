@@ -1,7 +1,9 @@
 from __future__ import unicode_literals
 from aristotle_mdr import models
 from aristotle_mdr.contrib.slots.models import Slot
+from comet import models as comet
 from datetime import date
+from indicators import models as lo_models
 from openpyxl import load_workbook
 from .utils import BaseImporter, get_col, get_vcol, has_required_cols
 from ..models import CategoryOption, Category, CategoryCombination
@@ -22,8 +24,9 @@ class IndicatorImporter(BaseImporter):
     SHEET_CATEGORY_COMBOS = 'CategoryCombos'
     SHEET_OPTIONS_SETS = 'OptionSets'
 
-    def __init__(self, data_file):
+    def __init__(self, data_file, collection=None):
         self.wb = load_workbook(data_file, read_only=True)
+        self.collection = collection
 
     def process(self):
         self.process_authorities()
@@ -32,6 +35,7 @@ class IndicatorImporter(BaseImporter):
         self.process_category_combitation()
         self.process_options_sets()
         self.process_data_elements()
+        self.process_indicators()
 
     def process_category_options(self):
         sheet = self.wb.get_sheet_by_name(self.SHEET_CATEGORY_OPTIONS)
@@ -179,3 +183,74 @@ class IndicatorImporter(BaseImporter):
                     de.save()
             # get value domain from data type
             # else:
+
+    def process_indicators(self):
+        sheet = self.wb.get_sheet_by_name(self.SHEET_INDICATORS)
+
+        for row in sheet.iter_rows(row_offset=2):
+            if not has_required_cols(row, 'A', 'B'):
+                continue
+
+            name = get_vcol(row, 'A')
+            short_name = get_vcol(row, 'B')
+            code = get_vcol(row, 'D')
+            question = get_vcol(row, 'E')
+            description = get_vcol(row, 'F', default='')
+            disaggregation = get_vcol(row, 'G', default='')
+            numerator = get_vcol(row, 'H')
+            numerator_description = get_vcol(row, 'I', default='')
+            numerator_computation = get_vcol(row, 'J', default='')
+            denominator = get_vcol(row, 'K')
+            denominator_description = get_vcol(row, 'L', default='')
+            denominator_computation = get_vcol(row, 'M', default='')
+            method_of_m = get_vcol(row, 'N')
+            instrument_name = get_vcol(row, 'O')
+            reference = get_vcol(row, 'P', default='')
+            data_source = get_vcol(row, 'Q')
+            population = get_vcol(row, 'R')
+            rationale = get_vcol(row, 'S', default='')
+            terms_of_use = get_vcol(row, 'T')
+            languages = get_vcol(row, 'U')
+
+            ind, c = comet.Indicator.objects.update_or_create(
+                name=name,
+                defaults={
+                    'short_name': short_name,
+                    'definition': description or name,
+                    'disaggregation_description': disaggregation,
+                    'numerator_description': numerator_description,
+                    'numerator_computation': numerator_computation,
+                    'denominator_description': denominator_description,
+                    'denominator_computation': denominator_computation,
+                    'references': reference,
+                    'rationale': rationale,
+                }
+            )
+
+            if c:
+                self.register(ind)
+                self.make_identifier(code, ind)
+                Slot.objects.filter(concept=ind).delete()
+                ind.numerators.clear()
+                ind.denominators.clear()
+
+            # Add custom properties as slots
+            self.text_to_slots(ind, question, 'Question text')
+            self.text_to_slots(ind, method_of_m, 'Method of measurement')
+            self.text_to_slots(ind, data_source, 'Data source')
+            self.text_to_slots(ind, population, 'Population')
+            self.text_to_slots(ind, terms_of_use, 'Terms of use')
+            self.text_to_slots(ind, languages, 'Languages')
+
+            # Add collection as slot field
+            if self.collection:
+                self.text_to_slots(ind, self.collection, 'Collection')
+
+            # Add Data Elements
+            ind.numerators.add(*self.get_elements(numerator))
+            ind.denominators.add(*self.get_elements(denominator))
+
+            # Add insturment relation
+            instrument = lo_models.Instrument.objects.filter(name=instrument_name)
+            if instrument.exists():
+                instrument.first().indicators.add(ind)

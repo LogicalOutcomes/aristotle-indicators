@@ -196,7 +196,6 @@ class IndicatorImporter(BaseImporter):
             de = self.get_from_identifier(de_identifier)
             if de:
                 models.DataElement.objects.filter(pk=de.pk).update(**defaults)
-                de = comet.Indicator.objects.get(pk=de.pk)
             else:
                 de = models.DataElement(**defaults)
                 de.save()

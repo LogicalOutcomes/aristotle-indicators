@@ -46,6 +46,8 @@ class BaseImporter(object):
             return obj.concept.item
 
     def make_identifier(self, ident, item):
+        if not ident:
+            return None
         obj, c = MDR_ID.ScopedIdentifier.objects.get_or_create(
             namespace=self.authority_namespace,
             identifier=ident,
@@ -68,6 +70,16 @@ class BaseImporter(object):
                     value=val
                 )
 
+    def get_elements(self, col):
+        if not col:
+            return []
+        elements = []
+        for code in [code.strip() for code in col.split(';')]:
+            elem = self.get_from_identifier(code)
+            if elem:
+                elements.append(elem)
+        return elements
+
 
 def has_required_cols(row, *args):
     if not row or len(row) < len(args):
@@ -86,11 +98,11 @@ def get_col(row, col):
                 return cell
 
 
-def get_vcol(row, col):
+def get_vcol(row, col, default=None):
     cell = get_col(row, col)
     if cell:
         return cell.value
-    return None
+    return default
 
 
 def lb_2_p(txt, sep="\n\n"):

@@ -1,0 +1,9 @@
+{% comment %}
+    usage: {% include "local/slot_links.html" with item=some_item slot_name='Domain' last_coma=False %}
+{% endcomment %}
+{% load logicaltags %}
+{% for slot in item|get_single_slot:slot_name %}
+    <a href="{% url 'aristotle_slots:similar_slots' slot.name %}?value={{slot.value|urlencode}}">
+    {{slot.value.strip}}{% if last_coma or not forloop.last %},{% endif %}
+    </a>
+{% endfor %}

@@ -1,6 +1,8 @@
 from aristotle_mdr.contrib.browse.views import BrowseConcepts
-from django.shortcuts import render
+from aristotle_mdr.contrib.slots.models import Slot
 from comet import models
+from django.db.models import Count
+from django.shortcuts import render
 from .forms import CompareIndicatorsForm
 
 
@@ -11,7 +13,22 @@ class BrowseIndicatorsAsHome(BrowseConcepts):
         # Call the base implementation first to get a context
         self.kwargs['app'] = 'comet'
         context = super(BrowseIndicatorsAsHome, self).get_context_data(**kwargs)
+        # Add filters contexts:
+        context['collections'] = Slot.objects.filter(
+            name='Collection'
+        ).values('value').annotate(count=Count('value')).order_by('-count')
         return context
+
+    def get_queryset(self, *args, **kwargs):
+        queryset = super(BrowseIndicatorsAsHome, self).get_queryset(*args, **kwargs)
+
+        # filter domains
+        collections = self.request.GET.getlist('collections')
+        if collections:
+            queryset = queryset.filter(slots__name='Collection',
+                                       slots__value__in=collections)
+
+        return queryset
 
 
 class ExportIndicators(BrowseConcepts):
