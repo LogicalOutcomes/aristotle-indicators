@@ -4,6 +4,7 @@ from comet import models
 from django.db.models import Count
 from django.shortcuts import render
 from .forms import CompareIndicatorsForm
+from .models import Goal
 
 
 class BrowseIndicatorsAsHome(BrowseConcepts):
@@ -13,20 +14,56 @@ class BrowseIndicatorsAsHome(BrowseConcepts):
         # Call the base implementation first to get a context
         self.kwargs['app'] = 'comet'
         context = super(BrowseIndicatorsAsHome, self).get_context_data(**kwargs)
-        # Add filters contexts:
+
+        # Collections
         context['collections'] = Slot.objects.filter(
             name='Collection'
         ).values('value').annotate(count=Count('value')).order_by('-count')
+        context['selected_collections'] = self.request.GET.getlist('collections')
+
+        # SDGs
+        context['sdgs'] = Goal.objects.all().annotate(count=Count('indicators')).exclude(count=0)
+        context['selected_sdgs'] = self.request.GET.getlist('sdgs')
+
+        # No Poverty
+        context['no_poverty'] = Slot.objects.filter(
+            name='No Poverty'
+        ).values('value').annotate(count=Count('value')).order_by('-count')
+        context['selected_no_poverty'] = self.request.GET.getlist('no_poverty')
+
+        # Theory of Change
+        context['theory_of_change'] = Slot.objects.filter(
+            name='Theory of Change'
+        ).values('value').annotate(count=Count('value')).order_by('-count')
+        context['selected_theory_of_change'] = self.request.GET.getlist('toc')
+
         return context
 
     def get_queryset(self, *args, **kwargs):
         queryset = super(BrowseIndicatorsAsHome, self).get_queryset(*args, **kwargs)
 
-        # filter domains
+        # filter collections
         collections = self.request.GET.getlist('collections')
         if collections:
             queryset = queryset.filter(slots__name='Collection',
                                        slots__value__in=collections)
+
+        # filter SDGs
+        sdgs = self.request.GET.getlist('sdgs')
+        if sdgs:
+            queryset = queryset.filter(related_goals__short_name__in=sdgs)
+
+        # Filter No Poverty
+        no_poverty = self.request.GET.getlist('no_poverty')
+        if no_poverty:
+            queryset = queryset.filter(slots__name='No Poverty',
+                                       slots__value__in=no_poverty)
+
+        # Filter Theory of Change
+        theory_of_change = self.request.GET.getlist('toc')
+        if theory_of_change:
+            queryset = queryset.filter(slots__name='Theory of Change',
+                                       slots__value__in=theory_of_change)
 
         return queryset
 

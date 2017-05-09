@@ -22,8 +22,9 @@ class IndicatorImporter(BaseImporter):
     SHEET_INDICATORS = 'Indicators'
     SHEET_DATA_ELEMENTS = 'Data Elements'
 
-    def __init__(self, data_file):
+    def __init__(self, data_file, collection=None):
         self.wb = load_workbook(data_file, read_only=True)
+        self.collection = collection
 
     def process(self):
         self.process_authorities()
@@ -168,6 +169,10 @@ class IndicatorImporter(BaseImporter):
             self.text_to_slots(ind, get_col(row, 'J').value, 'Languages')
             self.text_to_slots(ind, get_col(row, 'L').value, 'Population')
             self.text_to_slots(ind, get_col(row, 'M').value, 'Rationale')
+
+            # Add collection as slot field
+            if self.collection:
+                self.text_to_slots(ind, self.collection, 'Collection')
 
             if get_col(row, 'P'):
                 goal_name = get_col(row, 'P').value

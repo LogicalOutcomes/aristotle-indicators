@@ -13,8 +13,9 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         # Positional arguments
         parser.add_argument('data_file', type=argparse.FileType('rb'))
+        parser.add_argument('-c', '--collection', dest="collection", help="Set collection name for indicators")
 
     def handle(self, *args, **options):
         self.stdout.write('Importing data...')
-        IndicatorImporter(options.get('data_file')).process()
+        IndicatorImporter(options.get('data_file'), collection=options.get('collection')).process()
         self.stdout.write('Import complete')

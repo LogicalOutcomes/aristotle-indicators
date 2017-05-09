@@ -14,6 +14,40 @@
             </div>
         {% endfor %}
 
+        <h3 class="indicator-filters_title">{% trans "Sustainable development goals" %}</h3>
+
+        {% for sdg in sdgs %}
+            <div class="checkbox">
+                <label>
+                    <input type="checkbox" name="sdgs" value="{{sdg.short_name}}" {% if sdg.short_name in selected_sdgs %}checked{% endif %}>
+                    {{sdg.short_name}} ({{sdg.count}})
+                </label>
+            </div>
+
+            {% if sdg.short_name == 'No poverty' %}
+                {% for tag in no_poverty %}
+                <div class="checkbox checkbox-inner">
+                    <label>
+                        <input type="checkbox" name="no_poverty" value="{{tag.value}}" {% if tag.value in selected_no_poverty %}checked{% endif %}>
+                        {{tag.value}} ({{tag.count}})
+                    </label>
+                </div>
+                {% endfor %}
+            {% endif %}
+
+        {% endfor %}
+
+        <h3 class="indicator-filters_title">{% trans "Theory of change" %}</h3>
+
+        {% for toc in theory_of_change %}
+            <div class="checkbox">
+                <label>
+                    <input type="checkbox" name="toc" value="{{toc.value}}" {% if toc.value in selected_theory_of_change %}checked{% endif %}>
+                    {{toc.value}} ({{toc.count}})
+                </label>
+            </div>
+        {% endfor %}
+
     </form>
 </div>
 
