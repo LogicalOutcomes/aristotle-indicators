@@ -213,11 +213,11 @@ class IndicatorImporter(BaseImporter):
             languages = get_vcol(row, 'U')
 
             ind, c = comet.Indicator.objects.update_or_create(
-                name=name,
+                short_name=short_name,
                 defaults={
-                    'short_name': short_name,
+                    'name': name,
                     'definition': description or name,
-                    'disaggregation_description': disaggregation,
+                    # 'disaggregation_description': disaggregation_description,
                     'numerator_description': numerator_description,
                     'numerator_computation': numerator_computation,
                     'denominator_description': denominator_description,
@@ -226,6 +226,7 @@ class IndicatorImporter(BaseImporter):
                     'rationale': rationale,
                 }
             )
+            self.results['info']['indicators'].append(ind)
 
             if c:
                 self.register(ind)
@@ -241,6 +242,7 @@ class IndicatorImporter(BaseImporter):
             self.text_to_slots(ind, population, 'Population')
             self.text_to_slots(ind, terms_of_use, 'Terms of use')
             self.text_to_slots(ind, languages, 'Languages')
+            self.text_to_slots(ind, disaggregation, 'Disaggregation')
 
             # Add collection as slot field
             if self.collection:

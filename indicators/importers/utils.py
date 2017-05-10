@@ -4,6 +4,14 @@ from aristotle_mdr.contrib.slots.models import Slot
 
 
 class BaseImporter(object):
+    results = {
+        'errors': [],
+        'warnings': [],
+        'info': {
+            'indicators': [],
+            'data_elements': [],
+        },
+    }
 
     def process_authorities(self):
         self.authority, created = models.RegistrationAuthority.objects.get_or_create(
@@ -51,7 +59,9 @@ class BaseImporter(object):
         obj, c = MDR_ID.ScopedIdentifier.objects.get_or_create(
             namespace=self.authority_namespace,
             identifier=ident,
-            concept=item
+            defaults={
+                'concept': item
+            }
         )
         return obj
 
@@ -79,6 +89,9 @@ class BaseImporter(object):
             if elem:
                 elements.append(elem)
         return elements
+
+    def log_error(self, msg):
+        self.results['errors'].append(msg)
 
 
 def has_required_cols(row, *args):

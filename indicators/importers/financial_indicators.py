@@ -146,6 +146,7 @@ class IndicatorImporter(BaseImporter):
                 ind.save()
                 self.register(ind)
                 self.make_identifier(ind_identifier, ind)
+            self.results['info']['indicators'].append(ind)
 
             des = [de.strip() for de in get_col(row, 'F').value.split(';')]
             for de in des:
