@@ -1,15 +1,14 @@
 from __future__ import unicode_literals
 import datetime
 from aristotle_mdr import models
-from aristotle_mdr.contrib.identifiers import models as MDR_ID
-from aristotle_mdr.contrib.slots.models import Slot, SlotDefinition
 from comet import models as comet
 from indicators import models as lo_models
 from mallard_qr import models as mallard_qr
 from openpyxl import load_workbook
+from .utils import lb_2_p, get_col, BaseImporter
 
 
-class IndicatorImporter(object):
+class IndicatorImporter(BaseImporter):
     """Import indicators from spreadsheet
     """
     DEFAULT_AUTHORITY_NAME = 'Logical Outcomes'
@@ -23,8 +22,9 @@ class IndicatorImporter(object):
     SHEET_INDICATORS = 'Indicators'
     SHEET_DATA_ELEMENTS = 'Data Elements'
 
-    def __init__(self, data_file):
+    def __init__(self, data_file, collection=None):
         self.wb = load_workbook(data_file, read_only=True)
+        self.collection = collection
 
     def process(self):
         self.process_authorities()
@@ -33,18 +33,6 @@ class IndicatorImporter(object):
         self.process_value_domains()
         self.process_indicators()
         self.process_data_elements()
-
-    def process_authorities(self):
-        self.authority, created = models.RegistrationAuthority.objects.get_or_create(
-            name=self.DEFAULT_AUTHORITY_NAME
-        )
-        self.authority_org = models.Organization.objects.get(
-            pk=self.authority.pk
-        )
-        self.authority_namespace, c = MDR_ID.Namespace.objects.get_or_create(
-            naming_authority=self.authority_org,
-            shorthand_prefix=self.DEFAULT_AUTHORITY_PREFIX
-        )
 
     def process_goals(self):
         sheet = self.wb.get_sheet_by_name(self.SHEET_GOALS)
@@ -86,8 +74,8 @@ class IndicatorImporter(object):
         n = 0
         for i, row in enumerate(sheet.iter_rows(row_offset=2)):
             meaning = row[1].value
-            value = row[2].value or row[3].value or "-99"
-            order = row[3].value or n
+            value = row[2].value or "-99"
+            order = row[2].value or n
             if val_dom is None:
                 vd_name = row[0].value
                 dt, c = models.DataType.objects.get_or_create(name='Number')
@@ -124,61 +112,6 @@ class IndicatorImporter(object):
     def process_indicators(self):
         sheet = self.wb.get_sheet_by_name(self.SHEET_INDICATORS)
 
-        slot_type_toc, created = SlotDefinition.objects.get_or_create(
-            app_label='comet',
-            concept_type='indicator',
-            slot_name="Theory of Change",
-            cardinality=SlotDefinition.CARDINALITY.repeatable
-        )
-        slot_type_np, created = SlotDefinition.objects.get_or_create(
-            app_label='comet',
-            concept_type='indicator',
-            slot_name="No Poverty",
-            cardinality=SlotDefinition.CARDINALITY.repeatable
-        )
-        slot_type_question, created = SlotDefinition.objects.get_or_create(
-            app_label='comet',
-            concept_type='indicator',
-            slot_name="Question text",
-            cardinality=SlotDefinition.CARDINALITY.repeatable
-        )
-        slot_type_dcm, created = SlotDefinition.objects.get_or_create(
-            app_label='comet',
-            concept_type='indicator',
-            slot_name="Data collection method",
-            cardinality=SlotDefinition.CARDINALITY.repeatable
-        )
-        slot_type_mom, created = SlotDefinition.objects.get_or_create(
-            app_label='comet',
-            concept_type='indicator',
-            slot_name="Method of Measurement",
-            cardinality=SlotDefinition.CARDINALITY.repeatable
-        )
-        slot_type_tou, created = SlotDefinition.objects.get_or_create(
-            app_label='comet',
-            concept_type='indicator',
-            slot_name="Terms of use",
-            cardinality=SlotDefinition.CARDINALITY.repeatable
-        )
-        slot_type_lang, created = SlotDefinition.objects.get_or_create(
-            app_label='comet',
-            concept_type='indicator',
-            slot_name="Languages",
-            cardinality=SlotDefinition.CARDINALITY.repeatable
-        )
-        slot_type_pop, created = SlotDefinition.objects.get_or_create(
-            app_label='comet',
-            concept_type='indicator',
-            slot_name="Population",
-            cardinality=SlotDefinition.CARDINALITY.repeatable
-        )
-        slot_type_rat, created = SlotDefinition.objects.get_or_create(
-            app_label='comet',
-            concept_type='indicator',
-            slot_name="Rationale",
-            cardinality=SlotDefinition.CARDINALITY.repeatable
-        )
-
         for row in sheet.iter_rows(row_offset=1):
             if row[0].value is None:
                 continue
@@ -213,6 +146,7 @@ class IndicatorImporter(object):
                 ind.save()
                 self.register(ind)
                 self.make_identifier(ind_identifier, ind)
+            self.results['info']['indicators'].append(ind)
 
             des = [de.strip() for de in get_col(row, 'F').value.split(';')]
             for de in des:
@@ -227,15 +161,19 @@ class IndicatorImporter(object):
             else:
                 print "No instrument", instument_name, instrument
 
-            self.text_to_slots(ind, get_col(row, 'Q').value, slot_type_np)
-            self.text_to_slots(ind, get_col(row, 'O').value, slot_type_toc)
-            self.text_to_slots(ind, get_col(row, 'H').value, slot_type_dcm)
-            self.text_to_slots(ind, get_col(row, 'C').value, slot_type_question, clean=True)
-            self.text_to_slots(ind, get_col(row, 'G').value, slot_type_mom, clean=True)
-            self.text_to_slots(ind, get_col(row, 'N').value, slot_type_tou)
-            self.text_to_slots(ind, get_col(row, 'J').value, slot_type_lang)
-            self.text_to_slots(ind, get_col(row, 'L').value, slot_type_pop)
-            self.text_to_slots(ind, get_col(row, 'M').value, slot_type_rat)
+            self.text_to_slots(ind, get_col(row, 'O').value, 'Theory of Change')
+            self.text_to_slots(ind, get_col(row, 'Q').value, 'No Poverty')
+            self.text_to_slots(ind, get_col(row, 'H').value, 'Data collection method')
+            self.text_to_slots(ind, get_col(row, 'C').value, 'Question text', clean=True)
+            self.text_to_slots(ind, get_col(row, 'G').value, 'Method of Measurement', clean=True)
+            self.text_to_slots(ind, get_col(row, 'N').value, 'Terms of use')
+            self.text_to_slots(ind, get_col(row, 'J').value, 'Languages')
+            self.text_to_slots(ind, get_col(row, 'L').value, 'Population')
+            self.text_to_slots(ind, get_col(row, 'M').value, 'Rationale')
+
+            # Add collection as slot field
+            if self.collection:
+                self.text_to_slots(ind, self.collection, 'Collection')
 
             if get_col(row, 'P'):
                 goal_name = get_col(row, 'P').value
@@ -264,7 +202,6 @@ class IndicatorImporter(object):
             de = self.get_from_identifier(de_identifier)
             if de:
                 models.DataElement.objects.filter(pk=de.pk).update(**defaults)
-                de = comet.Indicator.objects.get(pk=de.pk)
             else:
                 de = models.DataElement(**defaults)
                 de.save()
@@ -294,59 +231,3 @@ class IndicatorImporter(object):
             if ind:
                 ind.numerators.add(de)
                 ind.save()
-
-    # Importer Helpers
-    def register(self, thing):
-        """Aristotle MDR regiter
-        """
-        models.Status.objects.get_or_create(
-            concept=thing,
-            registrationAuthority=self.authority,
-            registrationDate=self.DEFAULT_REGISTRATION_DATE,
-            state=models.STATES.recorded
-        )
-
-    def get_from_identifier(self, ident):
-        obj = MDR_ID.ScopedIdentifier.objects.filter(
-            namespace=self.authority_namespace,
-            identifier=ident
-        ).first()
-        if obj is None:
-            return None
-        else:
-            return obj.concept.item
-
-    def make_identifier(self, ident, item):
-        obj = MDR_ID.ScopedIdentifier.objects.create(
-            namespace=self.authority_namespace,
-            identifier=ident,
-            concept=item
-        )
-        return obj
-
-    def text_to_slots(self, item, col, slot_type, clean=False):
-        for val in col.split(';'):
-            val = val.strip()
-            if clean:
-                val = lb_2_p(val, sep="\n")
-            if val:
-                obj, created = Slot.objects.get_or_create(
-                    type=slot_type,
-                    concept=item,
-                    value=val
-                )
-
-
-# Helpers
-def get_col(row, col):
-    for cell in row:
-        if cell.value is not None:
-            if cell.coordinate.startswith(col):
-                return cell
-
-
-def lb_2_p(txt, sep="\n\n"):
-    if sep in txt:
-        return "<p>"+"</p><p>".join([l for l in txt.split(sep) if l != ""])+"</p>"
-    else:
-        return txt

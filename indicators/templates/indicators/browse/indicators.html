@@ -29,13 +29,12 @@ Showing {{ page.paginator.count }} results.
             {% endif %}
             {% trans 'Name' %}
         </th>
-        <th>{% trans 'Question' %}</th>
+        <th>{% trans 'Categories (click to see which indicators belong to that category)' %}</th>
         <th>
-            Select up to 3
+            {% trans "Compare up to 3" %}
             {% if allow_select_all %}
             <input title='{% trans "Select all" %}' type="checkbox" id="all_in_queryset" name="all_in_queryset">
             <input type="hidden" name="qs" value="{{ select_all_list_queryset_filter }}">
-
             {% endif %}
         </th>
 
@@ -48,13 +47,10 @@ Showing {{ page.paginator.count }} results.
         <td>
         {% include "aristotle_mdr/helpers/itemLink.html" with item=item %}</td>
         <td>
-        {% for i in item|get_single_slot:'Question text' %}
-        {{i.value|safe}}
-        {% endfor %}
-        {# % include "aristotle_mdr/helpers/inlineDetails.html" with item=item % #}
-</td>
+            {% include "indicators/helpers/slot_links.html" with slot_name='No Poverty' last_coma=True %}
+            {% include "indicators/helpers/slot_links.html" with slot_name='Collection' last_coma=False %}
+        </td>
         <td><input type="checkbox" id="id_items_{{item.id}}" name="items" value="{{item.id}}"></td>
-
     </tr>
     {% endfor %}
 {% endwith %}
