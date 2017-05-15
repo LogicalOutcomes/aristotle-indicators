@@ -1,4 +1,6 @@
 import requests
+from aristotle_mdr.models import ValueDomain
+from django.utils.text import slugify
 from ..models import Category, CategoryOption, CategoryCombination
 
 
@@ -13,6 +15,8 @@ class DHIS2Client(object):
         'categoryOptions': '/api/categoryOptions',
         'categories': '/api/categories',
         'categoryCombos': '/api/categoryCombos',
+        'optionSets': '/api/optionSets',
+        'options': '/api/options',
     }
 
     def __init__(self, server_url, user, password):
@@ -86,8 +90,10 @@ class DHIS2Exporter(object):
         )
 
     def export(self):
-        comb = CategoryCombination.objects.get(id=2)
-        self.export_category_combination(comb)
+        val_dom = ValueDomain.objects.get(pk=2)
+        self.export_option_set(val_dom)
+        # comb = CategoryCombination.objects.get(id=2)
+        # self.export_category_combination(comb)
 
     def export_category_options(self, obj):
         opt, c = self.dhis2.get_or_create_element('categoryOptions', {
@@ -115,5 +121,27 @@ class DHIS2Exporter(object):
             self.dhis2.add_to_collection('categoryCombos', comb['id'], 'categories', cat_id)
         return comb['id']
 
+    def export_option_set_value(self, obj):
+        val, c = self.dhis2.get_or_create_element('options', {
+            'name': obj.meaning, 'code': obj.value
+        })
+        return val['id']
+
+    def export_option_set(self, obj):
+        opt, c = self.dhis2.get_or_create_element('optionSets', {
+            'name': obj.name, 'code': self.get_code_from_identifier(obj),
+            'valueType': "TEXT"
+        })
+        for val in obj.permissiblevalue_set.all():
+            val_id = self.export_option_set_value(val)
+            self.dhis2.add_to_collection('optionSets', opt['id'], 'options', val_id)
+        return opt['id']
+
+    def get_code_from_identifier(self, obj):
+        ident = obj.identifiers.first()
+        if ident:
+            return ident.identifier
+        else:
+            return slugify(obj.name)
 
 exporter = DHIS2Exporter()
