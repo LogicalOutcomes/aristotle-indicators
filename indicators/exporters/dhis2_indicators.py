@@ -1,8 +1,6 @@
 import requests
-from aristotle_mdr.models import ValueDomain, DataElement
-from comet.models import Indicator
 from django.utils.text import slugify
-from ..models import Category, CategoryOption, CategoryCombination
+from ..models import CategoryCombination
 
 
 class DHIS2ClientException(Exception):
@@ -86,21 +84,8 @@ class DHIS2Client(object):
 
 class DHIS2Exporter(object):
 
-    def __init__(self):
-        self.dhis2 = DHIS2Client(
-            'http://dev.ocasi.sis.ngo',
-            'rafael@logicaloutcomes.net', '0s6dH9ZM'
-        )
-
-    def export(self):
-        indicator = Indicator.objects.get(id=20)
-        self.export_indicator(indicator)
-        # data_element = DataElement.objects.get(pk=19)
-        # self.export_data_element(data_element)
-        # val_dom = ValueDomain.objects.get(pk=2)
-        # self.export_option_set(val_dom)
-        # comb = CategoryCombination.objects.get(id=2)
-        # self.export_category_combination(comb)
+    def __init__(self, url, username, password, api_version=25):
+        self.dhis2 = DHIS2Client(url, username, password, version=api_version)
 
     def export_category_options(self, obj):
         opt, c = self.dhis2.get_or_create_element('categoryOptions', {
@@ -223,6 +208,3 @@ class DHIS2Exporter(object):
 
     def get_simple_repr(self, data, keys=['displayName', 'name', 'id']):
         return {k: v for k, v in data.items() if k in keys}
-
-
-exporter = DHIS2Exporter()
