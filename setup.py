@@ -30,5 +30,6 @@ setup(
     ],
     install_requires=[
         'aristotle-metadata-registry',
+        'requests',
     ]
 )
