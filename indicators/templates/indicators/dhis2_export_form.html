@@ -1,0 +1,40 @@
+{% extends "aristotle_mdr/base.html" %}
+{% load bootstrap3 i18n %}
+
+{% block extra_head_scripts %}
+{% endblock %}
+
+{% block content %}
+
+    <div class="row">
+        <div class="col-sm-6 col-sm-offset-3 well">
+            <h2>{% trans "Export to DHIS2" %}</h2>
+            <br>
+            <p>
+                <b>{% trans "Indicator:" %}</b>
+                {% include "aristotle_mdr/helpers/itemLink.html" with item=indicator %}
+            </p>
+
+            <hr>
+            <p>
+                <i class="fa fa-info"></i>
+                {% blocktrans %}
+                To use the DHIS2 API, you need to enter a valid username and password of your DHIS2 server. <br>
+                {% endblocktrans %}
+            </p>
+            <hr>
+
+            <form action="." method="post">
+                {% csrf_token %}
+                {% bootstrap_form form %}
+                <button class="btn btn-primary" type="submit">
+                    <i class="fa fa-cloud-upload"></i>
+                    {% trans "Export" %}
+                </button>
+            </form>
+
+        </div>
+    </div>
+
+
+{% endblock %}

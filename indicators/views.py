@@ -1,10 +1,15 @@
 from aristotle_mdr.contrib.browse.views import BrowseConcepts
 from aristotle_mdr.contrib.slots.models import Slot
 from comet import models
+from django.core.urlresolvers import reverse
 from django.db.models import Count
+from django.shortcuts import get_object_or_404
 from django.shortcuts import render
-from .forms import CompareIndicatorsForm
+from django.views.generic import TemplateView
+from django.views.generic.edit import FormView
+from .forms import CompareIndicatorsForm, DHIS2ExportForm
 from .models import Goal
+from .exporters.dhis2_indicators import DHIS2Exporter
 
 
 class BrowseIndicatorsAsHome(BrowseConcepts):
@@ -113,3 +118,31 @@ def comparer(request):
     return render(request, 'indicators/comparer.html', {
         'indicators': indicators, "form": form
     })
+
+
+class DHIS2ExportView(FormView):
+    template_name = 'indicators/dhis2_export_form.html'
+    form_class = DHIS2ExportForm
+
+    def get_success_url(self):
+        return reverse('dhis2_export_complete')
+
+    def get_context_data(self, **kwargs):
+        context = super(DHIS2ExportView, self).get_context_data(**kwargs)
+        context['indicator'] = get_object_or_404(models.Indicator, pk=self.kwargs['pk'])
+        return context
+
+    def form_valid(self, form):
+        DHIS2Exporter(
+            form.cleaned_data['server_url'],
+            form.cleaned_data['username'],
+            form.cleaned_data['password'],
+            form.cleaned_data['api_version']
+        ).export_indicator(
+            get_object_or_404(models.Indicator, pk=self.kwargs['pk'])
+        )
+        return super(DHIS2ExportView, self).form_valid(form)
+
+
+class DHIS2ExportCompleteView(TemplateView):
+    template_name = 'indicators/dhis2_export_complete.html'

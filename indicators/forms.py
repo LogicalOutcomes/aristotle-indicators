@@ -57,3 +57,10 @@ class QuickPDFExportDownloadForm(DownloadActionForm):
     items_label = "Items to export"
     download_type = 'pdf'
     title = "Exported Indicators"
+
+
+class DHIS2ExportForm(forms.Form):
+    username = forms.CharField()
+    password = forms.CharField(widget=forms.PasswordInput())
+    server_url = forms.URLField(help_text=_('DHIS2 base url'))
+    api_version = forms.IntegerField(initial=25)
