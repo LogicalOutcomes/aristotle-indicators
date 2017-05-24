@@ -15,19 +15,17 @@
         {% include "aristotle_mdr_browse/comet/indicator_filters.html" %}
     </div>
     <div class="col-sm-9">
-        <h2>How to find indicators</h2>
+        <h1 class="text-center">Find the Financial Indicators</h1>
         <p>
-        This site is a prototype indicator registry, sponsored by LogicalOutcomes and based on the open source Aristotle metadata registry.
+        This registry contains indicators sponsored by Prosper Canada.
+        According your needs you can:
         </p>
         <p>
-        Currently, the registry contains mainly financial literacy indicators sponsored by Prosper Canada. See About for a description of the project and our approach to selecting indicators.
+        ✓ Filter <br>
+        ✓ Compare and/or <br>
+        ✓ Download these indicators <br><br>
         </p>
-        <p>
-        To explore indicators, select options in the left menu. You can narrow down by topic or type; as the registry grows you will see more search facets.
-        </p>
-        <p>
-        Click on the indicator name to see the details, or select up to three indicators to compare them.
-        </p>
+
         <div id="indicators-list-table">
             {% include "indicators/browse/indicators.html" with page=page_obj allow_select_all=False %}
         </div>

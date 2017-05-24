@@ -1,20 +1,22 @@
 {% load i18n aristotle_tags aristotle_help logicaltags %}
 
 <div class="indicator-filters">
+    <h3 class="text-muted">{% trans "Refine by" %}</h3>
+
     <form id="indicator-filter-form" action="." method="get">
 
-        <h3 class="indicator-filters_title">{% trans "Collections" %}</h3>
+        <b class="indicator-filters_title">{% trans "Collections" %}</b>
 
         {% for collection in collections %}
             <div class="checkbox">
                 <label>
                     <input type="checkbox" name="collections" value="{{collection.value}}" {% if collection.value in selected_collections %}checked{% endif %}>
-                    {{collection.value}} ({{collection.count}})
+                    {{collection.value}} <span class="text-muted">({{collection.count}})</span>
                 </label>
             </div>
         {% endfor %}
 
-        <h3 class="indicator-filters_title">{% trans "Sustainable development goals" %}</h3>
+        <b class="indicator-filters_title">{% trans "Sustainable development goals" %}</b>
 
         {% for sdg in sdgs %}
             <div class="checkbox">
@@ -37,7 +39,7 @@
 
         {% endfor %}
 
-        <h3 class="indicator-filters_title">{% trans "Theory of change" %}</h3>
+        <b class="indicator-filters_title">{% trans "Theory of change" %}</b>
 
         {% for toc in theory_of_change %}
             <div class="checkbox">
