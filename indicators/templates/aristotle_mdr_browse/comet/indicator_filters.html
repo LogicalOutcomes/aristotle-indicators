@@ -22,7 +22,7 @@
             <div class="checkbox">
                 <label>
                     <input type="checkbox" name="sdgs" value="{{sdg.short_name}}" {% if sdg.short_name in selected_sdgs %}checked{% endif %}>
-                    {{sdg.short_name}} ({{sdg.count}})
+                    {{sdg.short_name}} <span class="text-muted">({{sdg.count}})</span>
                 </label>
             </div>
 
@@ -31,7 +31,7 @@
                 <div class="checkbox checkbox-inner">
                     <label>
                         <input type="checkbox" name="no_poverty" value="{{tag.value}}" {% if tag.value in selected_no_poverty %}checked{% endif %}>
-                        {{tag.value}} ({{tag.count}})
+                        {{tag.value}} <span class="text-muted">({{tag.count}})</span>
                     </label>
                 </div>
                 {% endfor %}
@@ -45,7 +45,7 @@
             <div class="checkbox">
                 <label>
                     <input type="checkbox" name="toc" value="{{toc.value}}" {% if toc.value in selected_theory_of_change %}checked{% endif %}>
-                    {{toc.value}} ({{toc.count}})
+                    {{toc.value}} <span class="text-muted">({{toc.count}})</span>
                 </label>
             </div>
         {% endfor %}
