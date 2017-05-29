@@ -37,7 +37,7 @@ class BrowseIndicatorsAsHome(BrowseConcepts):
 
         # No Poverty
         context = self.get_slot_context(context, 'No Poverty',
-                                        'no_poverty', 'no_poverty')
+                                        'no_poverty', 'no_pov')
 
         # Theory of Change
         context = self.get_slot_context(context, 'Theory of Change',
@@ -70,7 +70,7 @@ class BrowseIndicatorsAsHome(BrowseConcepts):
 
         # Filter No Poverty
         queryset = self.filter_queryset_by_slot(queryset,
-                                                'No Poverty', 'no_poverty')
+                                                'No Poverty', 'no_pov')
 
         # Filter Theory of Change
         queryset = self.filter_queryset_by_slot(queryset,

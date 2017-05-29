@@ -1,14 +1,17 @@
 {% comment %}
 Usage:
-    {% include 'aristotle_mdr_browse/comet/_slot_filter.html' with name='Slot name' param_name='sln' slot_values=slots %}
+    {% include 'aristotle_mdr_browse/comet/_slot_filter.html' with name='Slot name' param_name='sln' slots=slots selected_slots=sln hide_title=False extra_classes='checkbox-inner' %}
 {% endcomment %}
 {% load i18n %}
-<b class="indicator-filters_title">{% trans name %}</b>
 
-{% for value in slot_values %}
-    <div class="checkbox">
+{% if not hide_title %}
+    <b class="indicator-filters_title">{% trans name %}</b>
+{% endif %}
+
+{% for value in slots %}
+    <div class="checkbox {{extra_classes|default:''}}">
         <label>
-            <input type="checkbox" name="{{param_name}}" value="{{value.value}}" {% if value.value in selected_param_name %}checked{% endif %}>
+            <input type="checkbox" name="{{param_name}}" value="{{value.value}}" {% if value.value in selected_slots %}checked{% endif %}>
             {{value.value}} <span class="text-muted">({{value.count}})</span>
         </label>
     </div>

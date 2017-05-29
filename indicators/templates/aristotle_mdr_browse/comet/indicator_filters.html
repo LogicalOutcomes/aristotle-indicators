@@ -5,16 +5,8 @@
 
     <form id="indicator-filter-form" action="." method="get">
 
-        <b class="indicator-filters_title">{% trans "Collections" %}</b>
 
-        {% for collection in collections %}
-            <div class="checkbox">
-                <label>
-                    <input type="checkbox" name="collections" value="{{collection.value}}" {% if collection.value in selected_collections %}checked{% endif %}>
-                    {{collection.value}} <span class="text-muted">({{collection.count}})</span>
-                </label>
-            </div>
-        {% endfor %}
+        {% include 'aristotle_mdr_browse/comet/_slot_filter.html' with name='Collections' param_name='col' selected_slots=col slots=collections %}
 
         <b class="indicator-filters_title">{% trans "Sustainable development goals" %}</b>
 
@@ -27,30 +19,15 @@
             </div>
 
             {% if sdg.short_name == 'No poverty' %}
-                {% for tag in no_poverty %}
-                <div class="checkbox checkbox-inner">
-                    <label>
-                        <input type="checkbox" name="no_poverty" value="{{tag.value}}" {% if tag.value in selected_no_poverty %}checked{% endif %}>
-                        {{tag.value}} <span class="text-muted">({{tag.count}})</span>
-                    </label>
-                </div>
-                {% endfor %}
+                {% include 'aristotle_mdr_browse/comet/_slot_filter.html' with name='No Poverty' param_name='no_pov' selected_slots=no_pov slots=no_poverty hide_title=True extra_classes='checkbox-inner' %}
             {% endif %}
 
         {% endfor %}
 
-        <b class="indicator-filters_title">{% trans "Theory of change" %}</b>
 
-        {% for toc in theory_of_change %}
-            <div class="checkbox">
-                <label>
-                    <input type="checkbox" name="toc" value="{{toc.value}}" {% if toc.value in selected_theory_of_change %}checked{% endif %}>
-                    {{toc.value}} <span class="text-muted">({{toc.count}})</span>
-                </label>
-            </div>
-        {% endfor %}
+        {% include 'aristotle_mdr_browse/comet/_slot_filter.html' with name='Theory of change' param_name='toc' selected_slots=toc slots=theory_of_change %}
 
-        {% include 'aristotle_mdr_browse/comet/_slot_filter.html' with name='Data collection method' param_name='dcm' slot_values=data_collection_method %}
+        {% include 'aristotle_mdr_browse/comet/_slot_filter.html' with name='Data collection method' param_name='dcm' selected_slots=dcm slots=data_collection_method %}
     </form>
 </div>
 
