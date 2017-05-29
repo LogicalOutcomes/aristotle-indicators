@@ -50,6 +50,7 @@
             </div>
         {% endfor %}
 
+        {% include 'aristotle_mdr_browse/comet/_slot_filter.html' with name='Data collection method' param_name='dcm' slot_values=data_collection_method %}
     </form>
 </div>
 

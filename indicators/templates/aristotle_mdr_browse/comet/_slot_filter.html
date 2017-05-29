@@ -1,0 +1,15 @@
+{% comment %}
+Usage:
+    {% include 'aristotle_mdr_browse/comet/_slot_filter.html' with name='Slot name' param_name='sln' slot_values=slots %}
+{% endcomment %}
+{% load i18n %}
+<b class="indicator-filters_title">{% trans name %}</b>
+
+{% for value in slot_values %}
+    <div class="checkbox">
+        <label>
+            <input type="checkbox" name="{{param_name}}" value="{{value.value}}" {% if value.value in selected_param_name %}checked{% endif %}>
+            {{value.value}} <span class="text-muted">({{value.count}})</span>
+        </label>
+    </div>
+{% endfor %}

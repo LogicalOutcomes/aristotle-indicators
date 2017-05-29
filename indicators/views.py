@@ -15,43 +15,53 @@ from .exporters.dhis2_indicators import DHIS2Exporter
 class BrowseIndicatorsAsHome(BrowseConcepts):
     _model = models.Indicator
 
+    def get_slot_context(self, context, name, slug_name, param_name):
+        context[slug_name] = Slot.objects.filter(
+            name=name
+        ).values('value').annotate(count=Count('value')).order_by('-count')
+        context[param_name] = self.request.GET.getlist(param_name)
+        return context
+
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
         self.kwargs['app'] = 'comet'
         context = super(BrowseIndicatorsAsHome, self).get_context_data(**kwargs)
 
         # Collections
-        context['collections'] = Slot.objects.filter(
-            name='Collection'
-        ).values('value').annotate(count=Count('value')).order_by('-count')
-        context['selected_collections'] = self.request.GET.getlist('collections')
+        context = self.get_slot_context(context, 'Collection',
+                                        'collections', 'col')
 
         # SDGs
         context['sdgs'] = Goal.objects.all().annotate(count=Count('indicators')).exclude(count=0)
         context['selected_sdgs'] = self.request.GET.getlist('sdgs')
 
         # No Poverty
-        context['no_poverty'] = Slot.objects.filter(
-            name='No Poverty'
-        ).values('value').annotate(count=Count('value')).order_by('-count')
-        context['selected_no_poverty'] = self.request.GET.getlist('no_poverty')
+        context = self.get_slot_context(context, 'No Poverty',
+                                        'no_poverty', 'no_poverty')
 
         # Theory of Change
-        context['theory_of_change'] = Slot.objects.filter(
-            name='Theory of Change'
-        ).values('value').annotate(count=Count('value')).order_by('-count')
-        context['selected_theory_of_change'] = self.request.GET.getlist('toc')
+        context = self.get_slot_context(context, 'Theory of Change',
+                                        'theory_of_change', 'toc')
+
+        # Data collection method
+        context = self.get_slot_context(context, 'Data collection method',
+                                        'data_collection_method', 'dcm')
 
         return context
+
+    def filter_queryset_by_slot(self, queryset, name, param_name):
+        params = self.request.GET.getlist(param_name)
+        if params:
+            queryset = queryset.filter(slots__name=name,
+                                       slots__value__in=params)
+        return queryset
 
     def get_queryset(self, *args, **kwargs):
         queryset = super(BrowseIndicatorsAsHome, self).get_queryset(*args, **kwargs)
 
         # filter collections
-        collections = self.request.GET.getlist('collections')
-        if collections:
-            queryset = queryset.filter(slots__name='Collection',
-                                       slots__value__in=collections)
+        queryset = self.filter_queryset_by_slot(queryset,
+                                                'Collection', 'col')
 
         # filter SDGs
         sdgs = self.request.GET.getlist('sdgs')
@@ -59,18 +69,18 @@ class BrowseIndicatorsAsHome(BrowseConcepts):
             queryset = queryset.filter(related_goals__short_name__in=sdgs)
 
         # Filter No Poverty
-        no_poverty = self.request.GET.getlist('no_poverty')
-        if no_poverty:
-            queryset = queryset.filter(slots__name='No Poverty',
-                                       slots__value__in=no_poverty)
+        queryset = self.filter_queryset_by_slot(queryset,
+                                                'No Poverty', 'no_poverty')
 
         # Filter Theory of Change
-        theory_of_change = self.request.GET.getlist('toc')
-        if theory_of_change:
-            queryset = queryset.filter(slots__name='Theory of Change',
-                                       slots__value__in=theory_of_change)
+        queryset = self.filter_queryset_by_slot(queryset,
+                                                'Theory of Change', 'toc')
 
-        return queryset
+        # Data collection method
+        queryset = self.filter_queryset_by_slot(queryset,
+                                                'Data collection method', 'dcm')
+
+        return queryset.distinct()
 
 
 class ExportIndicators(BrowseConcepts):
