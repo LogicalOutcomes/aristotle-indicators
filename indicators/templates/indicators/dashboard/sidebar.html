@@ -1,0 +1,8 @@
+{% load i18n %}
+{% if request.user.is_superuser %}
+    <li class="staff_action {% ifequal activeTab "import_indicators" %}active{% endifequal %}">
+        <a href="{% url 'indicators_import_form' %}">
+        <i class="fa fa-upload fa-fw"></i> {% trans "Import Indicators" %}
+        </a>
+    </li>
+{% endif %}

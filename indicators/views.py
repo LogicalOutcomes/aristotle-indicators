@@ -1,15 +1,39 @@
+import time
 from aristotle_mdr.contrib.browse.views import BrowseConcepts
 from aristotle_mdr.contrib.slots.models import Slot
+from celery.result import AsyncResult
 from comet import models
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.files.storage import default_storage
 from django.core.urlresolvers import reverse
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
+from django.shortcuts import redirect
 from django.shortcuts import render
+from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView
 from django.views.generic.edit import FormView
-from .forms import CompareIndicatorsForm, DHIS2ExportForm
-from .models import Goal
+from django_celery_results.models import TaskResult
 from .exporters.dhis2_indicators import DHIS2Exporter
+from .forms import CompareIndicatorsForm, DHIS2ExportForm, ImportForm
+from .models import Goal
+from .tasks import import_indicators
+
+
+class SuperUserRequiredMixin(object):
+    """
+    View mixin which requires that the authenticated user is a super user
+    (i.e. `is_superuser` is True).
+    """
+    @method_decorator(login_required)
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            return redirect(settings.LOGIN_URL)
+        return super(SuperUserRequiredMixin, self).dispatch(
+            request,
+            *args, **kwargs)
 
 
 class BrowseIndicatorsAsHome(BrowseConcepts):
@@ -96,17 +120,6 @@ class ExportIndicators(BrowseConcepts):
         return "indicators/export_indicators.html"
 
 
-# def home(request, path=''):
-#     indicators = models.Indicator.objects.all() #visible(request.user)
-#     frameworks = models.Framework.objects.all() #visible(request.user)
-#     outcome_areas = models.OutcomeArea.objects.all() #visible(request.user)
-#     return render(request, 'aristotle_mdr/static/home.html',{
-#         'indicators':indicators,
-#         'frameworks':frameworks,
-#         'outcome_areas':outcome_areas,
-#     })
-
-
 def comparer(request):
     if request.GET.getlist('items', None):
         i1, i2, i3 = (request.GET.getlist('items') + [None, None, None])[:3]
@@ -128,6 +141,47 @@ def comparer(request):
     return render(request, 'indicators/comparer.html', {
         'indicators': indicators, "form": form
     })
+
+
+class ImportView(SuperUserRequiredMixin, FormView):
+    template_name = 'indicators/import_form.html'
+    form_class = ImportForm
+
+    def get_success_url(self):
+        return reverse('indicators_import_complete')
+
+    def form_valid(self, form):
+        # save spreadsheet on a tmp file
+        path = default_storage.save(
+            'spreadsheet-{}.xlsx'.format(time.time()),
+            form.cleaned_data['spreadsheet'],
+        )
+
+        try:
+            task = import_indicators.delay(
+                path,
+                form.cleaned_data['spreadsheet_type'],
+                form.cleaned_data['collection']
+            )
+            self.request.session['import_task_id'] = task.id
+            messages.add_message(self.request, messages.INFO, 'Importing file')
+        except Exception as e:
+            messages.add_message(self.request, messages.ERROR, 'Error: {}'.format(e))
+
+        return super(ImportView, self).form_valid(form)
+
+
+class ImportCompleteView(SuperUserRequiredMixin, TemplateView):
+    template_name = 'indicators/import_complete.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(ImportCompleteView, self).get_context_data(**kwargs)
+        context['task_id'] = self.request.session.get('import_task_id')
+        try:
+            context['task'] = TaskResult.objects.get(task_id=context['task_id'])
+        except TaskResult.DoesNotExist:
+            context['task'] = AsyncResult(context['task_id'])
+        return context
 
 
 class DHIS2ExportView(FormView):
@@ -156,3 +210,4 @@ class DHIS2ExportView(FormView):
 
 class DHIS2ExportCompleteView(TemplateView):
     template_name = 'indicators/dhis2_export_complete.html'
+

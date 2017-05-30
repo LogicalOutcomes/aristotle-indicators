@@ -64,3 +64,20 @@ class DHIS2ExportForm(forms.Form):
     password = forms.CharField(widget=forms.PasswordInput())
     server_url = forms.URLField(help_text=_('DHIS2 base url'))
     api_version = forms.IntegerField(initial=25)
+
+
+class ImportForm(forms.Form):
+    IMPORT_OPTIONS = (
+        ('financial', 'Financial type'),
+        ('DHIS2', 'DHIS2 type'),
+    )
+
+    spreadsheet = forms.FileField(help_text='xlsx format is expected')
+    spreadsheet_type = forms.ChoiceField(
+        choices=IMPORT_OPTIONS,
+        help_text='Select the spreadsheet type that you are about to import.'
+    )
+    collection = forms.CharField(
+        required=False, max_length=64,
+        help_text='Collection name will be assigned to the imported indicators'
+    )

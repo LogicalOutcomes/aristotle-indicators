@@ -23,7 +23,7 @@ Migrate your site:
 ./manage.py migrate indicators
 ```
 
-## Importing data from xlsx files:
+## Management commands to Importing data from xlsx files:
 
 Financial indicators:
 ```
@@ -36,3 +36,14 @@ DHIS2 indicators:
 ```
 
 This process might take some minutes depending on your file
+
+
+## Interface commands to import  data from xlsx files:
+
+The UI uses `celery` to run the task in an async way. If you are not using celery you can add `CELERY_TASK_ALWAYS_EAGER = True` to your `settings.py`.
+
+To include the import dashboard to the Admin tools you need to extend the Aristotle Settings with this addons:
+
+```
+ARISTOTLE_SETTINGS['DASHBOARD_ADDONS'] = ['indicators']
+```
