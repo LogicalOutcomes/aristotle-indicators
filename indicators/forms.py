@@ -81,3 +81,7 @@ class ImportForm(forms.Form):
         required=False, max_length=64,
         help_text='Collection name will be assigned to the imported indicators'
     )
+
+
+class CleanDBForm(forms.Form):
+    confirm = forms.BooleanField(initial=False, required=True)

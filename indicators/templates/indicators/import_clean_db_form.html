@@ -1,0 +1,39 @@
+{% extends "aristotle_mdr/user/userHome.html" %}
+{% load bootstrap3 i18n %}
+
+{% block sidebar %}
+    {% include "aristotle_mdr/user/userSideBar.html" with activeTab='import_indicators' %}
+{% endblock %}
+
+{% block page %}
+
+    <h1 class="text-center">
+        {% trans "Clean Data Base" %}
+        <i class="fa fa-eraser"></i>
+    </h1>
+
+    <div class="row">
+        <div class="col-sm-6 col-sm-offset-3 well">
+            <h2>{% trans "Import Indicators" %}</h2>
+            <p>
+                <i class="fa fa-info"></i>
+                {% blocktrans %}
+                Remove all indicators and related data
+                {% endblocktrans %}
+            </p>
+            <hr>
+
+            <form action="." method="post" enctype="multipart/form-data"    >
+                {% csrf_token %}
+                {% bootstrap_form form %}
+                <button class="btn btn-primary" type="submit">
+                    <i class="fa fa-eraser"></i>
+                    {% trans "Clean" %}
+                </button>
+            </form>
+
+        </div>
+    </div>
+
+
+{% endblock %}

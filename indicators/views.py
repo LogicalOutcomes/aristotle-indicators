@@ -1,8 +1,10 @@
 import time
+from aristotle_mdr import models
 from aristotle_mdr.contrib.browse.views import BrowseConcepts
 from aristotle_mdr.contrib.slots.models import Slot
+from aristotle_mdr.contrib.identifiers.models import ScopedIdentifier
 from celery.result import AsyncResult
-from comet import models
+from comet import models as comet
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -17,8 +19,8 @@ from django.views.generic import TemplateView
 from django.views.generic.edit import FormView
 from django_celery_results.models import TaskResult
 from .exporters.dhis2_indicators import DHIS2Exporter
-from .forms import CompareIndicatorsForm, DHIS2ExportForm, ImportForm
-from .models import Goal
+from .forms import CompareIndicatorsForm, DHIS2ExportForm, ImportForm, CleanDBForm
+from .models import Goal, Instrument, CategoryCombination, CategoryOption, Category
 from .tasks import import_indicators
 
 
@@ -37,7 +39,7 @@ class SuperUserRequiredMixin(object):
 
 
 class BrowseIndicatorsAsHome(BrowseConcepts):
-    _model = models.Indicator
+    _model = comet.Indicator
 
     def get_slot_context(self, context, name, slug_name, param_name):
         context[slug_name] = Slot.objects.filter(
@@ -108,7 +110,7 @@ class BrowseIndicatorsAsHome(BrowseConcepts):
 
 
 class ExportIndicators(BrowseConcepts):
-    _model = models.Indicator
+    _model = comet.Indicator
 
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
@@ -133,14 +135,18 @@ def comparer(request):
         i2 = request.GET.get('indicator_2', None)
         i3 = request.GET.get('indicator_3', None)
         data = request.GET
-    indicator1 = models.Indicator.objects.filter(id=i1).first()  # visible(request.user)
-    indicator2 = models.Indicator.objects.filter(id=i2).first()  # visible(request.user)
-    indicator3 = models.Indicator.objects.filter(id=i3).first()  # visible(request.user)
+    indicator1 = comet.Indicator.objects.filter(id=i1).first()  # visible(request.user)
+    indicator2 = comet.Indicator.objects.filter(id=i2).first()  # visible(request.user)
+    indicator3 = comet.Indicator.objects.filter(id=i3).first()  # visible(request.user)
     indicators = [indicator1, indicator2, indicator3]
     form = CompareIndicatorsForm(data=data, user=request.user)
     return render(request, 'indicators/comparer.html', {
         'indicators': indicators, "form": form
     })
+
+
+class ImportDashboardView(SuperUserRequiredMixin, TemplateView):
+    template_name = 'indicators/import_dashboard.html'
 
 
 class ImportView(SuperUserRequiredMixin, FormView):
@@ -184,6 +190,48 @@ class ImportCompleteView(SuperUserRequiredMixin, TemplateView):
         return context
 
 
+class CleanDBView(SuperUserRequiredMixin, FormView):
+    template_name = 'indicators/import_clean_db_form.html'
+    form_class = CleanDBForm
+
+    def get_success_url(self):
+        return reverse('indicators_import_dashboard')
+
+    def form_valid(self, form):
+        self.request.session['clean_db_task_id'] = task.id
+        # TODO Use a task to remove DB
+
+        # local models
+        Instrument.objects.all().delete()
+        Goal.objects.all().delete()
+        CategoryOption.objects.all().delete()
+        Category.objects.all().delete()
+        CategoryCombination.objects.all().delete()
+        # Indicators
+        models.PermissibleValue.objects.all().delete()
+        ScopedIdentifier.objects.all().delete()
+        models.ValueDomain.objects.all().delete()
+        Slot.objects.all().delete()
+        models.DataElement.objects.all().delete()
+        comet.Indicator.objects.all().delete()
+
+        messages.add_message(self.request, messages.ERROR, 'All indicators and related data were removed from the DB')
+        return super(CleanDBView, self).form_valid(form)
+
+
+class CleanDBCompleteView(SuperUserRequiredMixin, TemplateView):
+    template_name = 'indicators/import_clean_db_complete.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(CleanDBCompleteView, self).get_context_data(**kwargs)
+        context['task_id'] = self.request.session.get('clean_db_task_id')
+        try:
+            context['task'] = TaskResult.objects.get(task_id=context['task_id'])
+        except TaskResult.DoesNotExist:
+            context['task'] = AsyncResult(context['task_id'])
+        return context
+
+
 class DHIS2ExportView(FormView):
     template_name = 'indicators/dhis2_export_form.html'
     form_class = DHIS2ExportForm
@@ -193,7 +241,7 @@ class DHIS2ExportView(FormView):
 
     def get_context_data(self, **kwargs):
         context = super(DHIS2ExportView, self).get_context_data(**kwargs)
-        context['indicator'] = get_object_or_404(models.Indicator, pk=self.kwargs['pk'])
+        context['indicator'] = get_object_or_404(comet.Indicator, pk=self.kwargs['pk'])
         return context
 
     def form_valid(self, form):
@@ -203,11 +251,10 @@ class DHIS2ExportView(FormView):
             form.cleaned_data['password'],
             form.cleaned_data['api_version']
         ).export_indicator(
-            get_object_or_404(models.Indicator, pk=self.kwargs['pk'])
+            get_object_or_404(comet.Indicator, pk=self.kwargs['pk'])
         )
         return super(DHIS2ExportView, self).form_valid(form)
 
 
 class DHIS2ExportCompleteView(TemplateView):
     template_name = 'indicators/dhis2_export_complete.html'
-
