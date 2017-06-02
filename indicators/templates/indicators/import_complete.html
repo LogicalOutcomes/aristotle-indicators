@@ -37,9 +37,6 @@
         </div>
     </div>
 
-    <h3>{% trans "More actions:" %}</h3>
-    <a href="{% url 'indicators_import_form' %}" class="btn btn-default">{% trans "Import more Spreadsheets" %}</a>
-
 <script>
 $(function(){
 
@@ -48,7 +45,7 @@ $(function(){
             var $data = $(data);
             $(".task-results").replaceWith($data.find(".task-results"));
             // Only refresh on pending tasks
-            if($data.find(".task-pending").lenght > 0){
+            if($data.find(".task-pending").length > 0){
                 setTimeout(updateTasks, 2000);
             }
         });

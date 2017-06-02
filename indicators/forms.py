@@ -84,4 +84,7 @@ class ImportForm(forms.Form):
 
 
 class CleanDBForm(forms.Form):
-    confirm = forms.BooleanField(initial=False, required=True)
+    confirm = forms.BooleanField(
+        initial=False, required=True,
+        help_text=_('Check to confirm that you do want to remove all DB indicators and related data')
+    )
