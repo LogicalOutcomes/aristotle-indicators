@@ -12,7 +12,7 @@
     </h1>
 
     <div class="row">
-        <div class="col-sm-6 col-sm-offset-3 well">
+        <div class="col-sm-12">
             <div class="task-results">
 
                 <p>
@@ -33,6 +33,13 @@
                     {{task.result}}
                 </pre>
 
+                {% if task.traceback %}
+                <p><b>Traceback</b></p>
+                <pre class="pre-scrollable">
+                    {{task.traceback}}
+                </pre>
+                {% endif %}
+
             </div>
         </div>
     </div>
@@ -43,11 +50,12 @@ $(function(){
     function updateTasks(e) {
         xhr = $.get('{% url "indicators_import_complete" %}', function(data) {
             var $data = $(data);
-            $(".task-results").replaceWith($data.find(".task-results"));
             // Only refresh on pending tasks
             if($data.find(".task-pending").length > 0){
                 setTimeout(updateTasks, 2000);
             }
+            // refresh page with new content
+            $(".task-results").replaceWith($data.find(".task-results"));
         });
     };
 

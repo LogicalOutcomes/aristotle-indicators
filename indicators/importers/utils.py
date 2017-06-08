@@ -68,6 +68,9 @@ class BaseImporter(object):
     def text_to_slots(self, item, col, slot_name, slot_type='', clean=False):
         if not col:
             return
+        if type(col) is not str:
+            col = str(col)
+
         for val in col.split(';'):
             val = val.strip()
             if clean:
@@ -89,6 +92,13 @@ class BaseImporter(object):
             if elem:
                 elements.append(elem)
         return elements
+
+    def log_row(self, method, row):
+        if row:
+            cell = row[0]
+            self.results['process'] = u'Procesing Method: {}. Row: {} - {}'.format(
+                method, cell.row, [c.value for c in row]
+            )
 
     def log_error(self, msg):
         self.results['errors'].append(msg)
