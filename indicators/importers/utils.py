@@ -69,7 +69,7 @@ class BaseImporter(object):
         if not col:
             return
         if type(col) is not str:
-            col = str(col)
+            col = unicode(col)
 
         for val in col.split(';'):
             val = val.strip()
