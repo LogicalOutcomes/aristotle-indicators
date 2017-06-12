@@ -1,0 +1,71 @@
+{% extends "aristotle_mdr/user/userHome.html" %}
+{% load i18n %}
+
+{% block sidebar %}
+    {% include "aristotle_mdr/user/userSideBar.html" with activeTab='import_indicators' %}
+{% endblock %}
+
+{% block page %}
+    <h1 class="text-center">
+        {% trans "Import Indicators" %}
+        <i class="fa fa-upload"></i>
+    </h1>
+
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="task-results">
+
+                <p>
+                    <b>Task ID:</b> {{request.session.import_task_id}}
+                </p>
+
+                <p>
+                    <b>Status:</b> {{task.status}}
+                    {% if task.status == 'PENDING' %}
+                        <i class="fa fa-cog fa-spin task-pending"></i>
+                    {% endif %}
+                </p>
+
+                <p>
+                    <b>Result:</b>
+                </p>
+                <pre class="pre-scrollable">
+                    {{task.result}}
+                </pre>
+
+                {% if task.traceback %}
+                <p><b>Traceback</b></p>
+                <pre class="pre-scrollable">
+                    {{task.traceback}}
+                </pre>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+
+<script>
+$(function(){
+
+    function updateTasks(e) {
+        xhr = $.get('{% url "indicators_import_complete" %}', function(data) {
+            var $data = $(data);
+            // Only refresh on pending tasks
+            if($data.find(".task-pending").length > 0){
+                setTimeout(updateTasks, 2000);
+            }
+            // refresh page with new content
+            $(".task-results").replaceWith($data.find(".task-results"));
+        });
+    };
+
+    setTimeout(updateTasks, 2000);
+
+});
+
+</script>
+
+{% endblock %}
+
+
+

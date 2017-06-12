@@ -30,6 +30,8 @@ setup(
     ],
     install_requires=[
         'aristotle-metadata-registry',
+        'openpyxl',
+        'celery',
         'requests',
     ]
 )

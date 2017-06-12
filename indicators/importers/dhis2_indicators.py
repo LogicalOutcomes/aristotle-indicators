@@ -18,6 +18,7 @@ class IndicatorImporter(BaseImporter):
     DEFAULT_DEFINITION = 'Imported from the Indicator Reference Sheet'
     # data file sheets
     SHEET_INDICATORS = 'Indicators'
+    SHEET_INDICATOR_TYPE = 'Indicator type'
     SHEET_DATA_ELEMENTS = 'Data Elements'
     SHEET_CATEGORY_OPTIONS = 'CategoryOptions'
     SHEET_CATEGORIES = 'Categories'
@@ -35,12 +36,16 @@ class IndicatorImporter(BaseImporter):
         self.process_category_combitation()
         self.process_options_sets()
         self.process_data_elements()
+        self.process_indicator_types()
         self.process_indicators()
 
     def process_category_options(self):
         sheet = self.wb.get_sheet_by_name(self.SHEET_CATEGORY_OPTIONS)
+
         for row in sheet.iter_rows(row_offset=1):
-            if row[0].value is None:
+            self.log_row(sheet.title, row)
+
+            if not has_required_cols(row, 'A'):
                 continue
 
             option, c = CategoryOption.objects.get_or_create(
@@ -55,7 +60,9 @@ class IndicatorImporter(BaseImporter):
         categories = []
 
         for row in sheet.iter_rows(row_offset=1):
-            if row[0].value is None:
+            self.log_row(sheet.title, row)
+
+            if not has_required_cols(row, 'A'):
                 continue
 
             category, c = Category.objects.get_or_create(
@@ -78,7 +85,9 @@ class IndicatorImporter(BaseImporter):
         category_combinations = []
 
         for row in sheet.iter_rows(row_offset=1):
-            if row[0].value is None:
+            self.log_row(sheet.title, row)
+
+            if not has_required_cols(row, 'A'):
                 continue
 
             category_combination, c = CategoryCombination.objects.get_or_create(
@@ -103,6 +112,11 @@ class IndicatorImporter(BaseImporter):
 
         value_domains = {}
         for i, row in enumerate(sheet.iter_rows(row_offset=1)):
+            self.log_row(sheet.title, row)
+
+            if not has_required_cols(row, 'A', 'C'):
+                continue
+
             name = get_col(row, 'A').value
             code = get_col(row, 'C').value
             option_name = get_col(row, 'D').value
@@ -136,6 +150,8 @@ class IndicatorImporter(BaseImporter):
         sheet = self.wb.get_sheet_by_name(self.SHEET_DATA_ELEMENTS)
 
         for row in sheet.iter_rows(row_offset=1):
+            self.log_row(sheet.title, row)
+
             if not has_required_cols(row, 'A', 'C'):
                 continue
 
@@ -184,19 +200,42 @@ class IndicatorImporter(BaseImporter):
             # get value domain from data type
             # else:
 
+    def process_indicator_types(self):
+        sheet = self.wb.get_sheet_by_name(self.SHEET_INDICATOR_TYPE)
+
+        for row in sheet.iter_rows(row_offset=1):
+            self.log_row(sheet.title, row)
+
+            if not has_required_cols(row, 'A', 'B'):
+                continue
+
+            name = get_vcol(row, 'A')
+            factor = get_vcol(row, 'B')
+
+            ind_type, c = comet.IndicatorType.objects.update_or_create(
+                short_name=name,
+                defaults={
+                    'name': name,
+                    'definition': name,
+                }
+            )
+            self.text_to_slots(ind_type, factor, 'Factor')
+
     def process_indicators(self):
         sheet = self.wb.get_sheet_by_name(self.SHEET_INDICATORS)
 
         for row in sheet.iter_rows(row_offset=2):
+            self.log_row(sheet.title, row)
+
             if not has_required_cols(row, 'A', 'B'):
                 continue
 
             name = get_vcol(row, 'A')
             short_name = get_vcol(row, 'B')
             code = get_vcol(row, 'D')
-            question = get_vcol(row, 'E')
-            description = get_vcol(row, 'F', default='')
-            disaggregation = get_vcol(row, 'G', default='')
+            description = get_vcol(row, 'E', default='')
+            disaggregation = get_vcol(row, 'F', default='')
+            indicator_type = get_vcol(row, 'G')
             numerator = get_vcol(row, 'H')
             numerator_description = get_vcol(row, 'I', default='')
             numerator_computation = get_vcol(row, 'J', default='')
@@ -211,6 +250,10 @@ class IndicatorImporter(BaseImporter):
             rationale = get_vcol(row, 'S', default='')
             terms_of_use = get_vcol(row, 'T')
             languages = get_vcol(row, 'U')
+            theory_of_change = get_vcol(row, 'V')
+            data_collection = get_vcol(row, 'W')
+            domain = get_vcol(row, 'X')
+            sub_domain = get_vcol(row, 'Y')
 
             ind, c = comet.Indicator.objects.update_or_create(
                 short_name=short_name,
@@ -236,13 +279,16 @@ class IndicatorImporter(BaseImporter):
                 ind.denominators.clear()
 
             # Add custom properties as slots
-            self.text_to_slots(ind, question, 'Question text')
             self.text_to_slots(ind, method_of_m, 'Method of measurement')
             self.text_to_slots(ind, data_source, 'Data source')
             self.text_to_slots(ind, population, 'Population')
             self.text_to_slots(ind, terms_of_use, 'Terms of use')
-            self.text_to_slots(ind, languages, 'Languages')
             self.text_to_slots(ind, disaggregation, 'Disaggregation')
+            self.text_to_slots(ind, languages, 'Languages')
+            self.text_to_slots(ind, theory_of_change, 'Theory of change')
+            self.text_to_slots(ind, data_collection, 'Data collection')
+            self.text_to_slots(ind, domain, 'Domain')
+            self.text_to_slots(ind, sub_domain, 'SubDomain')
 
             # Add collection as slot field
             if self.collection:
@@ -256,3 +302,11 @@ class IndicatorImporter(BaseImporter):
             instrument = lo_models.Instrument.objects.filter(name=instrument_name)
             if instrument.exists():
                 instrument.first().indicators.add(ind)
+
+            # Add indicator type
+            try:
+                ind_type = comet.IndicatorType.objects.get(short_name=indicator_type)
+                ind.indicatorType = ind_type
+                ind.save()
+            except comet.IndicatorType.DoesNotExist:
+                pass

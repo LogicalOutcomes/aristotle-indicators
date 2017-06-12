@@ -1,19 +1,45 @@
+import time
+from aristotle_mdr import models
 from aristotle_mdr.contrib.browse.views import BrowseConcepts
 from aristotle_mdr.contrib.slots.models import Slot
-from comet import models
+from aristotle_mdr.contrib.identifiers.models import ScopedIdentifier
+from celery.result import AsyncResult
+from comet import models as comet
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.files.storage import default_storage
 from django.core.urlresolvers import reverse
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
+from django.shortcuts import redirect
 from django.shortcuts import render
+from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView
 from django.views.generic.edit import FormView
-from .forms import CompareIndicatorsForm, DHIS2ExportForm
-from .models import Goal
+from django_celery_results.models import TaskResult
 from .exporters.dhis2_indicators import DHIS2Exporter
+from .forms import CompareIndicatorsForm, DHIS2ExportForm, ImportForm, CleanDBForm
+from .models import Goal, Instrument, CategoryCombination, CategoryOption, Category
+from .tasks import import_indicators
+
+
+class SuperUserRequiredMixin(object):
+    """
+    View mixin which requires that the authenticated user is a super user
+    (i.e. `is_superuser` is True).
+    """
+    @method_decorator(login_required)
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            return redirect(settings.LOGIN_URL)
+        return super(SuperUserRequiredMixin, self).dispatch(
+            request,
+            *args, **kwargs)
 
 
 class BrowseIndicatorsAsHome(BrowseConcepts):
-    _model = models.Indicator
+    _model = comet.Indicator
 
     def get_slot_context(self, context, name, slug_name, param_name):
         context[slug_name] = Slot.objects.filter(
@@ -84,7 +110,7 @@ class BrowseIndicatorsAsHome(BrowseConcepts):
 
 
 class ExportIndicators(BrowseConcepts):
-    _model = models.Indicator
+    _model = comet.Indicator
 
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
@@ -94,17 +120,6 @@ class ExportIndicators(BrowseConcepts):
 
     def get_template_names(self):
         return "indicators/export_indicators.html"
-
-
-# def home(request, path=''):
-#     indicators = models.Indicator.objects.all() #visible(request.user)
-#     frameworks = models.Framework.objects.all() #visible(request.user)
-#     outcome_areas = models.OutcomeArea.objects.all() #visible(request.user)
-#     return render(request, 'aristotle_mdr/static/home.html',{
-#         'indicators':indicators,
-#         'frameworks':frameworks,
-#         'outcome_areas':outcome_areas,
-#     })
 
 
 def comparer(request):
@@ -120,14 +135,101 @@ def comparer(request):
         i2 = request.GET.get('indicator_2', None)
         i3 = request.GET.get('indicator_3', None)
         data = request.GET
-    indicator1 = models.Indicator.objects.filter(id=i1).first()  # visible(request.user)
-    indicator2 = models.Indicator.objects.filter(id=i2).first()  # visible(request.user)
-    indicator3 = models.Indicator.objects.filter(id=i3).first()  # visible(request.user)
+    indicator1 = comet.Indicator.objects.filter(id=i1).first()  # visible(request.user)
+    indicator2 = comet.Indicator.objects.filter(id=i2).first()  # visible(request.user)
+    indicator3 = comet.Indicator.objects.filter(id=i3).first()  # visible(request.user)
     indicators = [indicator1, indicator2, indicator3]
     form = CompareIndicatorsForm(data=data, user=request.user)
     return render(request, 'indicators/comparer.html', {
         'indicators': indicators, "form": form
     })
+
+
+class ImportDashboardView(SuperUserRequiredMixin, TemplateView):
+    template_name = 'indicators/import_dashboard.html'
+
+
+class ImportView(SuperUserRequiredMixin, FormView):
+    template_name = 'indicators/import_form.html'
+    form_class = ImportForm
+
+    def get_success_url(self):
+        return reverse('indicators_import_complete')
+
+    def form_valid(self, form):
+        # save spreadsheet on a tmp file
+        path = default_storage.save(
+            'spreadsheet-{}.xlsx'.format(time.time()),
+            form.cleaned_data['spreadsheet'],
+        )
+
+        try:
+            task = import_indicators.delay(
+                path,
+                form.cleaned_data['spreadsheet_type'],
+                form.cleaned_data['collection']
+            )
+            self.request.session['import_task_id'] = task.id
+            messages.add_message(self.request, messages.INFO, 'Importing file')
+        except Exception as e:
+            messages.add_message(self.request, messages.ERROR, 'Error: {}'.format(e))
+
+        return super(ImportView, self).form_valid(form)
+
+
+class ImportCompleteView(SuperUserRequiredMixin, TemplateView):
+    template_name = 'indicators/import_complete.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(ImportCompleteView, self).get_context_data(**kwargs)
+        context['task_id'] = self.request.session.get('import_task_id')
+        try:
+            context['task'] = TaskResult.objects.get(task_id=context['task_id'])
+        except TaskResult.DoesNotExist:
+            context['task'] = AsyncResult(context['task_id'])
+        return context
+
+
+class CleanDBView(SuperUserRequiredMixin, FormView):
+    template_name = 'indicators/import_clean_db_form.html'
+    form_class = CleanDBForm
+
+    def get_success_url(self):
+        return reverse('indicators_import_dashboard')
+
+    def form_valid(self, form):
+        self.request.session['clean_db_task_id'] = task.id
+        # TODO Use a task to remove DB
+
+        # local models
+        Instrument.objects.all().delete()
+        Goal.objects.all().delete()
+        CategoryOption.objects.all().delete()
+        Category.objects.all().delete()
+        CategoryCombination.objects.all().delete()
+        # Indicators
+        models.PermissibleValue.objects.all().delete()
+        ScopedIdentifier.objects.all().delete()
+        models.ValueDomain.objects.all().delete()
+        Slot.objects.all().delete()
+        models.DataElement.objects.all().delete()
+        comet.Indicator.objects.all().delete()
+
+        messages.add_message(self.request, messages.ERROR, 'All indicators and related data were removed from the DB')
+        return super(CleanDBView, self).form_valid(form)
+
+
+class CleanDBCompleteView(SuperUserRequiredMixin, TemplateView):
+    template_name = 'indicators/import_clean_db_complete.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(CleanDBCompleteView, self).get_context_data(**kwargs)
+        context['task_id'] = self.request.session.get('clean_db_task_id')
+        try:
+            context['task'] = TaskResult.objects.get(task_id=context['task_id'])
+        except TaskResult.DoesNotExist:
+            context['task'] = AsyncResult(context['task_id'])
+        return context
 
 
 class DHIS2ExportView(FormView):
@@ -139,7 +241,7 @@ class DHIS2ExportView(FormView):
 
     def get_context_data(self, **kwargs):
         context = super(DHIS2ExportView, self).get_context_data(**kwargs)
-        context['indicator'] = get_object_or_404(models.Indicator, pk=self.kwargs['pk'])
+        context['indicator'] = get_object_or_404(comet.Indicator, pk=self.kwargs['pk'])
         return context
 
     def form_valid(self, form):
@@ -149,7 +251,7 @@ class DHIS2ExportView(FormView):
             form.cleaned_data['password'],
             form.cleaned_data['api_version']
         ).export_indicator(
-            get_object_or_404(models.Indicator, pk=self.kwargs['pk'])
+            get_object_or_404(comet.Indicator, pk=self.kwargs['pk'])
         )
         return super(DHIS2ExportView, self).form_valid(form)
 
