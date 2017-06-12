@@ -94,10 +94,11 @@ class BaseImporter(object):
         return elements
 
     def log_row(self, method, row):
-        if row:
-            cell = row[0]
+        cells = [c for c in row if hasattr(c, 'row')]
+        if row and cells:
+            cell = cells[0]
             self.results['process'] = u'Procesing Method: {}. Row: {} - {}'.format(
-                method, cell.row, [c.value for c in row]
+                method, cell.row, [c.value if c else '' for c in row]
             )
 
     def log_error(self, msg):

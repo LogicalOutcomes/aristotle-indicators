@@ -44,7 +44,8 @@ class IndicatorImporter(BaseImporter):
 
         for row in sheet.iter_rows(row_offset=1):
             self.log_row(sheet.title, row)
-            if row[0].value is None:
+
+            if not has_required_cols(row, 'A'):
                 continue
 
             option, c = CategoryOption.objects.get_or_create(
@@ -60,7 +61,8 @@ class IndicatorImporter(BaseImporter):
 
         for row in sheet.iter_rows(row_offset=1):
             self.log_row(sheet.title, row)
-            if row[0].value is None:
+
+            if not has_required_cols(row, 'A'):
                 continue
 
             category, c = Category.objects.get_or_create(
@@ -84,7 +86,8 @@ class IndicatorImporter(BaseImporter):
 
         for row in sheet.iter_rows(row_offset=1):
             self.log_row(sheet.title, row)
-            if row[0].value is None:
+
+            if not has_required_cols(row, 'A'):
                 continue
 
             category_combination, c = CategoryCombination.objects.get_or_create(
@@ -110,6 +113,9 @@ class IndicatorImporter(BaseImporter):
         value_domains = {}
         for i, row in enumerate(sheet.iter_rows(row_offset=1)):
             self.log_row(sheet.title, row)
+
+            if not has_required_cols(row, 'A', 'C'):
+                continue
 
             name = get_col(row, 'A').value
             code = get_col(row, 'C').value

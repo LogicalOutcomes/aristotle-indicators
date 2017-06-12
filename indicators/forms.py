@@ -68,8 +68,8 @@ class DHIS2ExportForm(forms.Form):
 
 class ImportForm(forms.Form):
     IMPORT_OPTIONS = (
-        ('financial', 'Financial type'),
         ('DHIS2', 'DHIS2 type'),
+        ('financial', 'Financial type'),
     )
 
     spreadsheet = forms.FileField(help_text='xlsx format is expected')
@@ -78,7 +78,7 @@ class ImportForm(forms.Form):
         help_text='Select the spreadsheet type that you are about to import.'
     )
     collection = forms.CharField(
-        required=False, max_length=64,
+        required=True, max_length=64,
         help_text='Collection name will be assigned to the imported indicators'
     )
 
