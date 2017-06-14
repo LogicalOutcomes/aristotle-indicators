@@ -37,6 +37,7 @@ class Goal(aristotle.models.concept):
 @python_2_unicode_compatible
 class DHIS2Category(models.Model):
     code = models.CharField(max_length=64)
+    collection = models.CharField(max_length=64)
     short_name = models.CharField(max_length=64)
     name = models.CharField(max_length=128)
 

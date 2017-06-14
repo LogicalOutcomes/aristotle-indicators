@@ -27,7 +27,7 @@ class IndicatorImporter(BaseImporter):
 
     def __init__(self, data_file, collection=None):
         self.wb = load_workbook(data_file, read_only=True)
-        self.collection = collection
+        self.collection = collection or ''
 
     def process(self):
         self.process_authorities()
@@ -45,13 +45,16 @@ class IndicatorImporter(BaseImporter):
         for row in sheet.iter_rows(row_offset=1):
             self.log_row(sheet.title, row)
 
-            if not has_required_cols(row, 'A'):
+            if not has_required_cols(row, 'A', 'C'):
                 continue
 
-            option, c = CategoryOption.objects.get_or_create(
+            option, c = CategoryOption.objects.update_or_create(
                 code=get_col(row, 'C').value,
-                name=get_col(row, 'A').value,
-                short_name=get_col(row, 'D').value,
+                collection=self.collection,
+                defaults={
+                    'name': get_col(row, 'A').value,
+                    'short_name': get_col(row, 'D').value,
+                }
             )
 
     def process_categories(self):
@@ -62,13 +65,16 @@ class IndicatorImporter(BaseImporter):
         for row in sheet.iter_rows(row_offset=1):
             self.log_row(sheet.title, row)
 
-            if not has_required_cols(row, 'A'):
+            if not has_required_cols(row, 'A', 'C'):
                 continue
 
-            category, c = Category.objects.get_or_create(
+            category, c = Category.objects.update_or_create(
                 code=get_col(row, 'C').value,
-                name=get_col(row, 'A').value,
-                short_name=get_col(row, 'D').value,
+                collection=self.collection,
+                defaults={
+                    'name': get_col(row, 'A').value,
+                    'short_name': get_col(row, 'D').value,
+                }
             )
 
             if category not in categories:
@@ -87,13 +93,16 @@ class IndicatorImporter(BaseImporter):
         for row in sheet.iter_rows(row_offset=1):
             self.log_row(sheet.title, row)
 
-            if not has_required_cols(row, 'A'):
+            if not has_required_cols(row, 'A', 'C'):
                 continue
 
-            category_combination, c = CategoryCombination.objects.get_or_create(
+            category_combination, c = CategoryCombination.objects.update_or_create(
                 code=get_col(row, 'C').value,
-                name=get_col(row, 'A').value,
-                short_name=get_col(row, 'D').value,
+                collection=self.collection,
+                defaults={
+                    'name': get_col(row, 'A').value,
+                    'short_name': get_col(row, 'D').value,
+                }
             )
 
             if category_combination not in category_combinations:
@@ -122,21 +131,23 @@ class IndicatorImporter(BaseImporter):
             option_name = get_col(row, 'D').value
             option_code = get_col(row, 'F').value
 
-            if name is None:
-                continue
+            if code not in value_domains:
+                val_dom = self.get_from_identifier(code)
+                if not val_dom:
+                    val_dom, created = models.ValueDomain.objects.get_or_create(
+                        name=name,
+                        definition=self.DEFAULT_DEFINITION,
+                        data_type=data_type,
+                    )
+                    if created:
+                        self.register(val_dom)
+                    # Add collection as slot field
+                    if self.collection:
+                        self.text_to_slots(val_dom, self.collection, 'Collection')
+                    self.make_identifier(code, val_dom)
 
-            if name not in value_domains:
-                val_dom, created = models.ValueDomain.objects.update_or_create(
-                    name=name,
-                    defaults={
-                        'definition': self.DEFAULT_DEFINITION,
-                        'data_type': data_type,
-                    }
-                )
-                self.register(val_dom)
-                self.make_identifier(code, val_dom)
                 val_dom.permissiblevalue_set.all().delete()
-                value_domains[name] = {'val_dom': val_dom, 'options': []}
+                value_domains[code] = {'val_dom': val_dom, 'options': []}
 
             pv = models.PermissibleValue.objects.create(
                 valueDomain=value_domains[name]['val_dom'],
@@ -144,7 +155,7 @@ class IndicatorImporter(BaseImporter):
                 meaning=option_name,
                 order=len(value_domains[name]['options']) + 1
             )
-            value_domains[name]['options'].append(pv)
+            value_domains[code]['options'].append(pv)
 
     def process_data_elements(self):
         sheet = self.wb.get_sheet_by_name(self.SHEET_DATA_ELEMENTS)
@@ -169,17 +180,19 @@ class IndicatorImporter(BaseImporter):
             option_set = get_vcol(row, 'N')
             comment_option_set = get_vcol(row, 'O')
 
-            de, c = models.DataElement.objects.update_or_create(
-                name=name,
-                defaults={
-                    'short_name': short_name,
-                    'definition': description or name,
-                }
-            )
-            if c:
-                self.register(de)
+            de = self.get_from_identifier(code)
+
+            if not de:
+                de, c = models.DataElement.objects.get_or_create(
+                    name=name,
+                    short_name=short_name,
+                    definition=description or name,
+                )
+                if c:
+                    self.register(de)
                 self.make_identifier(code, de)
-                Slot.objects.filter(concept=de).delete()
+                # do not remove the slots collection so we can track dependencies
+                Slot.objects.filter(concept=de).exclude(name='Collection').delete()
 
             # Add custom properties
             self.text_to_slots(de, form_name, 'Form name')
@@ -190,6 +203,10 @@ class IndicatorImporter(BaseImporter):
             self.text_to_slots(de, zero_is_significant, 'Zero is significant')
             self.text_to_slots(de, comment_option_set, 'Comment option set')
             self.text_to_slots(de, url, 'URL')
+
+            # Add collection as slot field
+            if self.collection:
+                self.text_to_slots(de, self.collection, 'Collection')
 
             # Add value domain
             if option_set:
@@ -221,13 +238,17 @@ class IndicatorImporter(BaseImporter):
             )
             self.text_to_slots(ind_type, factor, 'Factor')
 
+            # Add collection as slot field
+            if self.collection:
+                self.text_to_slots(ind_type, self.collection, 'Collection')
+
     def process_indicators(self):
         sheet = self.wb.get_sheet_by_name(self.SHEET_INDICATORS)
 
         for row in sheet.iter_rows(row_offset=2):
             self.log_row(sheet.title, row)
 
-            if not has_required_cols(row, 'A', 'B'):
+            if not has_required_cols(row, 'A', 'B', 'D'):
                 continue
 
             name = get_vcol(row, 'A')
@@ -255,28 +276,31 @@ class IndicatorImporter(BaseImporter):
             domain = get_vcol(row, 'X')
             sub_domain = get_vcol(row, 'Y')
 
-            ind, c = comet.Indicator.objects.update_or_create(
-                short_name=short_name,
-                defaults={
-                    'name': name,
-                    'definition': description or name,
-                    # 'disaggregation_description': disaggregation_description,
-                    'numerator_description': numerator_description,
-                    'numerator_computation': numerator_computation,
-                    'denominator_description': denominator_description,
-                    'denominator_computation': denominator_computation,
-                    'references': reference,
-                    'rationale': rationale,
-                }
-            )
-            self.results['info']['indicators'].append(ind)
-
-            if c:
-                self.register(ind)
+            ind = self.get_from_identifier(code)
+            if not ind:
+                ind, c = comet.Indicator.objects.update_or_create(
+                    short_name=short_name,
+                    defaults={
+                        'name': name,
+                        'definition': description or name,
+                        # 'disaggregation_description': disaggregation_description,
+                        'numerator_description': numerator_description,
+                        'numerator_computation': numerator_computation,
+                        'denominator_description': denominator_description,
+                        'denominator_computation': denominator_computation,
+                        'references': reference,
+                        'rationale': rationale,
+                    }
+                )
+                if c:
+                    self.register(ind)
                 self.make_identifier(code, ind)
-                Slot.objects.filter(concept=ind).delete()
-                ind.numerators.clear()
-                ind.denominators.clear()
+            # clean previous data
+            Slot.objects.filter(concept=ind).exclude(name='Collection').delete()
+            ind.numerators.clear()
+            ind.denominators.clear()
+
+            self.results['info']['indicators'].append(ind)
 
             # Add custom properties as slots
             self.text_to_slots(ind, method_of_m, 'Method of measurement')
