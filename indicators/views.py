@@ -41,9 +41,9 @@ class SuperUserRequiredMixin(object):
 class BrowseIndicatorsAsHome(BrowseConcepts):
     _model = comet.Indicator
 
-    def get_slot_context(self, context, name, slug_name, param_name):
+    def get_slot_context(self, context, name, slug_name, param_name, concepts):
         context[slug_name] = Slot.objects.filter(
-            name=name
+            name=name, concept__in=concepts
         ).values('value').annotate(count=Count('value')).order_by('-count')
         context[param_name] = self.request.GET.getlist(param_name)
         return context
@@ -52,10 +52,11 @@ class BrowseIndicatorsAsHome(BrowseConcepts):
         # Call the base implementation first to get a context
         self.kwargs['app'] = 'comet'
         context = super(BrowseIndicatorsAsHome, self).get_context_data(**kwargs)
+        indicators = comet.Indicator.objects.all()
 
         # Collections
         context = self.get_slot_context(context, 'Collection',
-                                        'collections', 'col')
+                                        'collections', 'col', indicators)
 
         # SDGs
         context['sdgs'] = Goal.objects.all().annotate(count=Count('indicators')).exclude(count=0)
@@ -63,15 +64,15 @@ class BrowseIndicatorsAsHome(BrowseConcepts):
 
         # No Poverty
         context = self.get_slot_context(context, 'No Poverty',
-                                        'no_poverty', 'no_pov')
+                                        'no_poverty', 'no_pov', indicators)
 
         # Theory of Change
         context = self.get_slot_context(context, 'Theory of Change',
-                                        'theory_of_change', 'toc')
+                                        'theory_of_change', 'toc', indicators)
 
         # Data collection method
         context = self.get_slot_context(context, 'Data collection method',
-                                        'data_collection_method', 'dcm')
+                                        'data_collection_method', 'dcm', indicators)
 
         return context
 
