@@ -1,6 +1,9 @@
 # Indicators Extension
 An Aristotle (1.5) Extension to manage indicators
 
+[![Build Status](https://travis-ci.org/LogicalOutcomes/aristotle-indicators.svg?branch=master)](https://travis-ci.org/LogicalOutcomes/aristotle-indicators)
+[![Coverage Status](https://coveralls.io/repos/github/LogicalOutcomes/aristotle-indicators/badge.svg?branch=master)](https://coveralls.io/github/LogicalOutcomes/aristotle-indicators?branch=master)
+
 ## Installation
 
 Install this repo with pip.
