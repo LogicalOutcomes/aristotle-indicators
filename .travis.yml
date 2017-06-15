@@ -1,0 +1,31 @@
+
+# Lets run on the new infrastructure
+sudo: false
+
+language: python
+python:
+  - "2.7"
+
+services:
+ - postgresql
+
+env:
+  - DJ=1.8 DB=sqlitefile
+  - DJ=1.8 DB=postgres
+  - DJ=1.10 DB=sqlitefile
+  - DJ=1.10 DB=postgres
+
+before_script:
+  - psql -c 'create database aristotle_test_db;' -U postgres
+
+install:
+  - if [[ $DB == postgres ]]; then pip install -q psycopg2 --quiet; fi
+  - "pip install -r requirements.test.txt"
+  - "pip install ."
+  - pip install -q Django==$DJ
+
+# command to run tests
+script:
+  - coverage run --branch --source=indicators manage.py test indicators.tests
+after_success:
+  - coveralls

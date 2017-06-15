@@ -1,0 +1,13 @@
+--index-url https://pypi.python.org/simple/
+
+-e git+git://github.com/aristotle-mdr/comet-indicator-registry@master#egg=django-aristotle-comet-indicator-registry
+-e git+git://github.com/LogicalOutcomes/mallard-questionnaire-registry#egg=django-aristotle-mallard-questionnaire
+
+
+aristotle-metadata-registry
+openpyxl
+celery
+requests
+coveralls
+whoosh
+django_tools
