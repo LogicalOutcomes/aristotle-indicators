@@ -1,8 +1,6 @@
 import time
-from aristotle_mdr import models
 from aristotle_mdr.contrib.browse.views import BrowseConcepts
 from aristotle_mdr.contrib.slots.models import Slot
-from aristotle_mdr.contrib.identifiers.models import ScopedIdentifier
 from celery.result import AsyncResult
 from comet import models as comet
 from django.conf import settings
@@ -20,8 +18,8 @@ from django.views.generic.edit import FormView
 from django_celery_results.models import TaskResult
 from .exporters.dhis2_indicators import DHIS2Exporter
 from .forms import CompareIndicatorsForm, DHIS2ExportForm, ImportForm, CleanDBForm
-from .models import Goal, Instrument, CategoryCombination, CategoryOption, Category
-from .tasks import import_indicators
+from .models import Goal
+from .tasks import import_indicators, clean_data_base
 
 
 class SuperUserRequiredMixin(object):
@@ -196,27 +194,15 @@ class CleanDBView(SuperUserRequiredMixin, FormView):
     form_class = CleanDBForm
 
     def get_success_url(self):
-        return reverse('indicators_import_dashboard')
+        return reverse('indicators_clean_db_complete')
 
     def form_valid(self, form):
-        self.request.session['clean_db_task_id'] = task.id
-        # TODO Use a task to remove DB
-
-        # local models
-        Instrument.objects.all().delete()
-        Goal.objects.all().delete()
-        CategoryOption.objects.all().delete()
-        Category.objects.all().delete()
-        CategoryCombination.objects.all().delete()
-        # Indicators
-        models.PermissibleValue.objects.all().delete()
-        ScopedIdentifier.objects.all().delete()
-        models.ValueDomain.objects.all().delete()
-        Slot.objects.all().delete()
-        models.DataElement.objects.all().delete()
-        comet.Indicator.objects.all().delete()
-
-        messages.add_message(self.request, messages.ERROR, 'All indicators and related data were removed from the DB')
+        try:
+            task = clean_data_base.delay()
+            self.request.session['clean_db_task_id'] = task.id
+            messages.add_message(self.request, messages.INFO, 'Removing elements from database')
+        except Exception as e:
+            messages.add_message(self.request, messages.ERROR, 'Error: {}'.format(e))
         return super(CleanDBView, self).form_valid(form)
 
 

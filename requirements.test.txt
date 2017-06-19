@@ -3,10 +3,10 @@
 -e git+git://github.com/aristotle-mdr/comet-indicator-registry@master#egg=django-aristotle-comet-indicator-registry
 -e git+git://github.com/LogicalOutcomes/mallard-questionnaire-registry#egg=django-aristotle-mallard-questionnaire
 
-
 aristotle-metadata-registry
 openpyxl
 celery
+django_celery_results
 requests
 coveralls
 whoosh

@@ -1,6 +1,13 @@
 from aristotle_mdr import models
 from aristotle_mdr.contrib.identifiers import models as MDR_ID
+from aristotle_mdr.contrib.identifiers.models import ScopedIdentifier
 from aristotle_mdr.contrib.slots.models import Slot
+from comet import models as comet
+
+from ..models import (
+    Instrument, Goal, CategoryOption, CategoryCombination,
+    Category
+)
 
 
 class BaseImporter(object):
@@ -134,3 +141,22 @@ def lb_2_p(txt, sep="\n\n"):
         return "<p>" + "</p><p>".join([lb for lb in txt.split(sep) if lb != ""]) + "</p>"
     else:
         return txt
+
+
+class DBManager(object):
+
+    @classmethod
+    def clean_db(cls):
+        # local models
+        Instrument.objects.all().delete()
+        Goal.objects.all().delete()
+        CategoryOption.objects.all().delete()
+        Category.objects.all().delete()
+        CategoryCombination.objects.all().delete()
+        # Indicators
+        models.PermissibleValue.objects.all().delete()
+        ScopedIdentifier.objects.all().delete()
+        models.ValueDomain.objects.all().delete()
+        Slot.objects.all().delete()
+        models.DataElement.objects.all().delete()
+        comet.Indicator.objects.all().delete()
