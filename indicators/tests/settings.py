@@ -35,6 +35,7 @@ INSTALLED_APPS = (
     'comet',
     'mallard_qr',
     'indicators',
+    'django_celery_results',
 ) + INSTALLED_APPS
 
 HAYSTACK_CONNECTIONS = {
@@ -54,3 +55,5 @@ PASSWORD_HASHERS = (
 ARISTOTLE_SETTINGS['CONTENT_EXTENSIONS'] += ['comet', 'mallard_qr', 'indicators']
 
 ROOT_URLCONF = 'indicators.tests.urls'
+
+CELERY_TASK_ALWAYS_EAGER = True

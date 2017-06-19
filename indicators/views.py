@@ -203,7 +203,6 @@ class CleanDBView(SuperUserRequiredMixin, FormView):
             messages.add_message(self.request, messages.INFO, 'Removing elements from database')
         except Exception as e:
             messages.add_message(self.request, messages.ERROR, 'Error: {}'.format(e))
-
         return super(CleanDBView, self).form_valid(form)
 
 

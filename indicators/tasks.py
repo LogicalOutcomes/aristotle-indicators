@@ -1,17 +1,18 @@
 import sys
+from celery.task import task
 from celery.utils.log import get_task_logger
 from django.core.files.storage import default_storage
 from .importers.dhis2_indicators import IndicatorImporter as DHIS2Importer
 from .importers.financial_indicators import IndicatorImporter as FinancialImporter
 from .importers.utils import DBManager
 
-# TODO: import the app using settings
-from logicaloutcomes.celery import app
-
 logger = get_task_logger(__name__)
 
 
-@app.task()
+@task(
+    time_limit=(60 * 60) * 3 + 5,     # 3h 5min
+    soft_time_limit=(60 * 60) * 3,    # 3h
+)
 def import_indicators(spreadsheet_path, spreadsheet_type, collection):
     spreadsheet = default_storage.open(spreadsheet_path)
 
@@ -35,7 +36,7 @@ def import_indicators(spreadsheet_path, spreadsheet_type, collection):
     return {'status': 'complete', 'indicators': indicator_cnt}
 
 
-@app.task()
+@task()
 def clean_data_base():
     DBManager.clean_db()
     return {'status': 'OK'}
