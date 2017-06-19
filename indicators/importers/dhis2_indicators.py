@@ -123,7 +123,7 @@ class IndicatorImporter(BaseImporter):
         for i, row in enumerate(sheet.iter_rows(row_offset=1)):
             self.log_row(sheet.title, row)
 
-            if not has_required_cols(row, 'A', 'C'):
+            if not has_required_cols(row, 'A', 'C', 'D', 'F'):
                 continue
 
             name = get_col(row, 'A').value
@@ -150,10 +150,10 @@ class IndicatorImporter(BaseImporter):
                 value_domains[code] = {'val_dom': val_dom, 'options': []}
 
             pv = models.PermissibleValue.objects.create(
-                valueDomain=value_domains[name]['val_dom'],
+                valueDomain=value_domains[code]['val_dom'],
                 value=option_code,
                 meaning=option_name,
-                order=len(value_domains[name]['options']) + 1
+                order=len(value_domains[code]['options']) + 1
             )
             value_domains[code]['options'].append(pv)
 
@@ -174,11 +174,11 @@ class IndicatorImporter(BaseImporter):
             domain_type = get_vcol(row, 'H')
             value_type = get_vcol(row, 'I')
             aggregation_operator = get_vcol(row, 'J')
-            category_combination = get_vcol(row, 'K')
-            url = get_vcol(row, 'L')
-            zero_is_significant = get_vcol(row, 'M')
-            option_set = get_vcol(row, 'N')
-            comment_option_set = get_vcol(row, 'O')
+            category_combination = get_vcol(row, 'L')
+            url = get_vcol(row, 'M')
+            zero_is_significant = get_vcol(row, 'N')
+            option_set = get_vcol(row, 'O')
+            comment_option_set = get_vcol(row, 'P')
 
             de = self.get_from_identifier(code)
 

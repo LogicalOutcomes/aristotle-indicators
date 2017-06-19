@@ -3,6 +3,7 @@ from celery.utils.log import get_task_logger
 from django.core.files.storage import default_storage
 from .importers.dhis2_indicators import IndicatorImporter as DHIS2Importer
 from .importers.financial_indicators import IndicatorImporter as FinancialImporter
+from .importers.utils import DBManager
 
 # TODO: import the app using settings
 from logicaloutcomes.celery import app
@@ -32,3 +33,9 @@ def import_indicators(spreadsheet_path, spreadsheet_type, collection):
     # display results
     indicator_cnt = len(importer.results['info']['indicators'])
     return {'status': 'complete', 'indicators': indicator_cnt}
+
+
+@app.task()
+def clean_data_base():
+    DBManager.clean_db()
+    return {'status': 'OK'}

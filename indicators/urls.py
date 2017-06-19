@@ -2,7 +2,8 @@ from django.conf.urls import url
 from django.views.generic import TemplateView
 from .views import (
     BrowseIndicatorsAsHome, comparer, DHIS2ExportView, DHIS2ExportCompleteView,
-    ImportView, ImportCompleteView, CleanDBView, ImportDashboardView
+    ImportView, ImportCompleteView, CleanDBView, ImportDashboardView,
+    CleanDBCompleteView,
 )
 
 urlpatterns = [
@@ -13,8 +14,9 @@ urlpatterns = [
 
     url(r'^import/dashboard/$', ImportDashboardView.as_view(), name='indicators_import_dashboard'),
     url(r'^import/clean-db/$', CleanDBView.as_view(), name='indicators_clean_db_form'),
+    url(r'^import/clean-db/complete/$', CleanDBCompleteView.as_view(), name='indicators_clean_db_complete'),
     url(r'^import/indicators/$', ImportView.as_view(), name='indicators_import_form'),
-    url(r'^import/complete/$', ImportCompleteView.as_view(), name='indicators_import_complete'),
+    url(r'^import/indicators/complete/$', ImportCompleteView.as_view(), name='indicators_import_complete'),
 
 
     url(r'^dhis2/export/indicator/(?P<pk>\d+)/$', DHIS2ExportView.as_view(), name='dhis2_export_form'),
