@@ -115,11 +115,7 @@ class BaseImporter(object):
 def has_required_cols(row, *args):
     if not row or len(row) < len(args):
         return False
-    coords = [c.coordinate for c in row if c.value]
-    required = []
-    for col in args:
-        required += [col for c in coords if c.startswith(col)]
-    return len(required) == len(args)
+    return all([get_vcol(row, col) for col in args])
 
 
 def get_col(row, col):
