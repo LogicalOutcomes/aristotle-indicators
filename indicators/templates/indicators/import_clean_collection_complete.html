@@ -7,7 +7,7 @@
 
 {% block page %}
     <h1 class="text-center">
-        {% trans "Clean Data Base" %}
+        {% trans "Clean Collection" %}
         <i class="fa fa-upload"></i>
     </h1>
 
@@ -49,7 +49,7 @@ $(function(){
 {% if task %}
 
     function updateTasks(e) {
-        xhr = $.get('{% url "indicators_clean_db_complete" %}', function(data) {
+        xhr = $.get('{% url "indicators_clean_collection_complete" %}', function(data) {
             var $data = $(data);
             // Only refresh on pending tasks
             if($data.find(".task-pending").length > 0){
