@@ -42,9 +42,30 @@
                 </a>
               </h1>
               <div class="caption text-center">
+                <h3>{% trans "Clean Collection" %}</h3>
+                <p>
+                    <a href="{% url 'indicators_clean_collection_form' %}" class="btn btn-primary btn-multiline">
+                        <i class="fa fa-fw fa-eraser"></i> {% trans 'Clean Collection interface' %}
+                    </a>
+                </p>
+
+              </div>
+            </div>
+
+        </div>
+
+        <div class="col-md-4">
+
+            <div class="thumbnail">
+              <h1 class="text-center">
+                <a href="{% url 'indicators_clean_db_form' %}">
+                    <i class="fa fa-fw fa-eraser fa-lg"></i>
+                </a>
+              </h1>
+              <div class="caption text-center">
                 <h3>{% trans "Clean Data Base" %}</h3>
                 <p>
-                    <a href="{% url 'indicators_clean_db_form' %}" class="btn btn-primary btn-multiline">
+                    <a href="{% url 'indicators_clean_db_form' %}" class="btn btn-danger btn-multiline">
                         <i class="fa fa-fw fa-eraser"></i> {% trans 'Clean DB interface' %}
                     </a>
                 </p>

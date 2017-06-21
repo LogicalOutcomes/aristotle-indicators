@@ -88,3 +88,10 @@ class CleanDBForm(forms.Form):
         initial=False, required=True,
         help_text=_('Check to confirm that you do want to remove all DB indicators and related data')
     )
+
+
+class CleanCollectionForm(forms.Form):
+    collection = forms.CharField(
+        required=True, max_length=64,
+        help_text='Collection name of elements to remove'
+    )

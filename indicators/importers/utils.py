@@ -156,3 +156,24 @@ class DBManager(object):
         Slot.objects.all().delete()
         models.DataElement.objects.all().delete()
         comet.Indicator.objects.all().delete()
+
+    @classmethod
+    def clean_collection(cls, collection):
+        CategoryOption.objects.filter(collection=collection).delete()
+        Category.objects.filter(collection=collection).delete()
+        CategoryCombination.objects.filter(collection=collection).delete()
+
+        cls.clean_model_collection(models.ValueDomain, collection)
+        cls.clean_model_collection(models.DataElement, collection)
+        cls.clean_model_collection(comet.Indicator, collection)
+        Slot.objects.filter(name='Collection',
+                            value=collection).delete()
+
+    @classmethod
+    def clean_model_collection(cls, model, collection):
+        elements = model.objects.filter(slots__name='Collection',
+                                        slots__value=collection)
+        for element in elements:
+            # only remove elements with no other collections
+            if not element.slots.filter(name='Collection').exclude(value=collection):
+                element.delete()

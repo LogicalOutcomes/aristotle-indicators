@@ -37,6 +37,12 @@ def import_indicators(spreadsheet_path, spreadsheet_type, collection):
 
 
 @task()
+def clean_collection(collection):
+    DBManager.clean_collection(collection)
+    return {'status': 'OK', 'message': 'Collection "{}" elements removed'.format(collection)}
+
+
+@task()
 def clean_data_base():
     DBManager.clean_db()
-    return {'status': 'OK'}
+    return {'status': 'OK', 'message': 'DB elements removed'}

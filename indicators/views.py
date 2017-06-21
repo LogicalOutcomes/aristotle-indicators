@@ -17,9 +17,12 @@ from django.views.generic import TemplateView
 from django.views.generic.edit import FormView
 from django_celery_results.models import TaskResult
 from .exporters.dhis2_indicators import DHIS2Exporter
-from .forms import CompareIndicatorsForm, DHIS2ExportForm, ImportForm, CleanDBForm
+from .forms import (
+    CompareIndicatorsForm, DHIS2ExportForm, ImportForm, CleanDBForm,
+    CleanCollectionForm
+)
 from .models import Goal
-from .tasks import import_indicators, clean_data_base
+from .tasks import import_indicators, clean_data_base, clean_collection
 
 
 class SuperUserRequiredMixin(object):
@@ -189,34 +192,70 @@ class ImportCompleteView(SuperUserRequiredMixin, TemplateView):
         return context
 
 
-class CleanDBView(SuperUserRequiredMixin, FormView):
-    template_name = 'indicators/import_clean_db_form.html'
-    form_class = CleanDBForm
+class TaskBaseView(SuperUserRequiredMixin, FormView):
 
     def get_success_url(self):
-        return reverse('indicators_clean_db_complete')
+        return reverse(self.task_complete_view_name)
+
+    def run_task(self, form):
+        raise NotImplementedError('this method should return a task')
 
     def form_valid(self, form):
         try:
-            task = clean_data_base.delay()
-            self.request.session['clean_db_task_id'] = task.id
-            messages.add_message(self.request, messages.INFO, 'Removing elements from database')
+            task = self.run_task(form)
+            self.request.session['{}_task_id'.format(self.task_name)] = task.id
+            messages.add_message(self.request, messages.INFO, 'Executing: {}'.format(self.task_description))
         except Exception as e:
             messages.add_message(self.request, messages.ERROR, 'Error: {}'.format(e))
-        return super(CleanDBView, self).form_valid(form)
+        return super(TaskBaseView, self).form_valid(form)
 
 
-class CleanDBCompleteView(SuperUserRequiredMixin, TemplateView):
-    template_name = 'indicators/import_clean_db_complete.html'
+class TaskCompleteBaseView(SuperUserRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
-        context = super(CleanDBCompleteView, self).get_context_data(**kwargs)
-        context['task_id'] = self.request.session.get('clean_db_task_id')
+        context = super(TaskCompleteBaseView, self).get_context_data(**kwargs)
+        context['task_id'] = self.request.session.get('{}_task_id'.format(self.task_name))
+        if not context['task_id']:
+            return context
+        # if there's a test add it to the context
         try:
             context['task'] = TaskResult.objects.get(task_id=context['task_id'])
         except TaskResult.DoesNotExist:
             context['task'] = AsyncResult(context['task_id'])
         return context
+
+
+class CleanDBView(TaskBaseView):
+    task_name = 'clean_db'
+    task_description = 'Remove database elements'
+    task_complete_view_name = 'indicators_clean_db_complete'
+    template_name = 'indicators/import_clean_db_form.html'
+    form_class = CleanDBForm
+
+    def run_task(self, form):
+        return clean_data_base.delay()
+
+
+class CleanDBCompleteView(TaskCompleteBaseView):
+    task_name = 'clean_db'
+    template_name = 'indicators/import_clean_db_complete.html'
+
+
+class CleanCollectionView(TaskBaseView):
+    task_name = 'clean_collection'
+    task_description = 'Remove collection elements'
+    task = clean_collection
+    task_complete_view_name = 'indicators_clean_collection_complete'
+    template_name = 'indicators/import_clean_collection_form.html'
+    form_class = CleanCollectionForm
+
+    def run_task(self, form):
+        return clean_collection.delay(form.cleaned_data.get('collection'))
+
+
+class CleanCollectionCompleteView(TaskCompleteBaseView):
+    task_name = 'clean_collection'
+    template_name = 'indicators/import_clean_collection_complete.html'
 
 
 class DHIS2ExportView(FormView):

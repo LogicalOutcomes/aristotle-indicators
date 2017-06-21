@@ -8,13 +8,13 @@
 {% block page %}
 
     <h1 class="text-center">
-        {% trans "Clean Data Base" %}
+        {% trans "Clean Collection" %}
         <i class="fa fa-eraser"></i>
     </h1>
 
     <div class="row">
         <div class="col-sm-6 col-sm-offset-3 well">
-            <h2><i class="fa fa-info"></i> {% trans "Remove indicators and related data" %}</h2>
+            <h2><i class="fa fa-info"></i> {% trans "Remove indicators and related data of a collection" %}</h2>
             <hr>
 
             <form action="." method="post" enctype="multipart/form-data"    >
@@ -22,7 +22,7 @@
                 {% bootstrap_form form %}
                 <button class="btn btn-danger" type="submit">
                     <i class="fa fa-eraser"></i>
-                    {% trans "Clean" %}
+                    {% trans "Clean Collection" %}
                 </button>
             </form>
 
