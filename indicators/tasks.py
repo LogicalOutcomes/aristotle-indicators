@@ -1,7 +1,9 @@
 import sys
 from celery.task import task
 from celery.utils.log import get_task_logger
+from comet.models import Indicator
 from django.core.files.storage import default_storage
+from .exporters.dhis2_indicators import DHIS2Exporter
 from .importers.dhis2_indicators import IndicatorImporter as DHIS2Importer
 from .importers.financial_indicators import IndicatorImporter as FinancialImporter
 from .importers.utils import DBManager
@@ -46,3 +48,15 @@ def clean_collection(collection):
 def clean_data_base():
     DBManager.clean_db()
     return {'status': 'OK', 'message': 'DB elements removed'}
+
+
+@task()
+def dhis2_export(server_url, username, password, api_version, indicator_pk):
+    indicator = Indicator.objects.get(pk=indicator_pk)
+    res = DHIS2Exporter(
+        server_url,
+        username,
+        password,
+        api_version
+    ).export_indicator(indicator)
+    return {'status': 'OK', 'indicator': indicator_pk, 'info': res}
