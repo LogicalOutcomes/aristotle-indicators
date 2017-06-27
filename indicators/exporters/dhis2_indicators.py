@@ -131,6 +131,7 @@ class DHIS2Exporter(object):
 
     def export_data_element(self, obj):
         # Add category combination
+        category_combo = None
         cat_combo_code = self.get_single_value_from_slot(obj, 'Category combination Code')
         if cat_combo_code:
             cat_combo_obj = CategoryCombination.objects.filter(code=cat_combo_code).first()
@@ -179,7 +180,14 @@ class DHIS2Exporter(object):
             denominator = denominator.replace(code, '#{{{}}}'.format(res_num['id']))
 
         # Indicator Type
-        ind_type = self.dhis2.get_element('indicatorTypes', 'Number')
+        if obj.indicatorType:
+            ind_type, c = self.dhis2.get_or_create_element('indicatorTypes', {
+                'name': obj.indicatorType.short_name,
+                'factor': self.get_single_value_from_slot(obj.indicatorType, 'Factor')
+            })
+        else:
+            # if not type use Number as default
+            ind_type = self.dhis2.get_element('indicatorTypes', 'Number')
 
         # Generate Indicator
         ind, c = self.dhis2.get_or_create_element('indicators', {

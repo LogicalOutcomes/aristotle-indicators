@@ -34,5 +34,6 @@ setup(
         'celery',
         'django_celery_results',
         'requests',
+        'mock'
     ]
 )

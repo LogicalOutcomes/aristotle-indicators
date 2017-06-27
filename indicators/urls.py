@@ -21,6 +21,6 @@ urlpatterns = [
     url(r'^import/indicators/complete/$', ImportCompleteView.as_view(), name='indicators_import_complete'),
 
 
-    url(r'^dhis2/export/indicator/(?P<pk>\d+)/$', DHIS2ExportView.as_view(), name='dhis2_export_form'),
-    url(r'^dhis2/export/complete/$', DHIS2ExportCompleteView.as_view(), name='dhis2_export_complete'),
+    url(r'^dhis2/export/indicator/(?P<pk>\d+)/$', DHIS2ExportView.as_view(), name='indicators_dhis2_export_form'),
+    url(r'^dhis2/export/complete/$', DHIS2ExportCompleteView.as_view(), name='indicators_dhis2_export_complete'),
 ]

@@ -9,7 +9,7 @@ item_register = {
 
 
 def download(request, download_type, item):
-    return redirect(reverse('dhis2_export_form', args=[item.pk]))
+    return redirect(reverse('indicators_dhis2_export_form', args=[item.pk]))
 
 
 def bulk_download(request, download_type, items, title=None, subtitle=None):

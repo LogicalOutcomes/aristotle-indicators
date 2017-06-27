@@ -11,3 +11,4 @@ requests
 coveralls
 whoosh
 django_tools
+mock

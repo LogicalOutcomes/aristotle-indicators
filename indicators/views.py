@@ -16,13 +16,15 @@ from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView
 from django.views.generic.edit import FormView
 from django_celery_results.models import TaskResult
-from .exporters.dhis2_indicators import DHIS2Exporter
 from .forms import (
     CompareIndicatorsForm, DHIS2ExportForm, ImportForm, CleanDBForm,
     CleanCollectionForm
 )
 from .models import Goal
-from .tasks import import_indicators, clean_data_base, clean_collection
+from .tasks import (
+    import_indicators, clean_data_base, clean_collection,
+    dhis2_export
+)
 
 
 class SuperUserRequiredMixin(object):
@@ -244,7 +246,6 @@ class CleanDBCompleteView(TaskCompleteBaseView):
 class CleanCollectionView(TaskBaseView):
     task_name = 'clean_collection'
     task_description = 'Remove collection elements'
-    task = clean_collection
     task_complete_view_name = 'indicators_clean_collection_complete'
     template_name = 'indicators/import_clean_collection_form.html'
     form_class = CleanCollectionForm
@@ -258,29 +259,29 @@ class CleanCollectionCompleteView(TaskCompleteBaseView):
     template_name = 'indicators/import_clean_collection_complete.html'
 
 
-class DHIS2ExportView(FormView):
+class DHIS2ExportView(TaskBaseView):
+    task_name = 'dhis2_export'
+    task_description = 'Export elements to DHIS2'
+    task_complete_view_name = 'indicators_dhis2_export_complete'
     template_name = 'indicators/dhis2_export_form.html'
     form_class = DHIS2ExportForm
 
-    def get_success_url(self):
-        return reverse('dhis2_export_complete')
+    def run_task(self, form):
+        indicator = get_object_or_404(comet.Indicator, pk=self.kwargs['pk'])
+        return dhis2_export.delay(
+            form.cleaned_data['server_url'],
+            form.cleaned_data['username'],
+            form.cleaned_data['password'],
+            form.cleaned_data['api_version'],
+            indicator.pk
+        )
 
     def get_context_data(self, **kwargs):
         context = super(DHIS2ExportView, self).get_context_data(**kwargs)
         context['indicator'] = get_object_or_404(comet.Indicator, pk=self.kwargs['pk'])
         return context
 
-    def form_valid(self, form):
-        DHIS2Exporter(
-            form.cleaned_data['server_url'],
-            form.cleaned_data['username'],
-            form.cleaned_data['password'],
-            form.cleaned_data['api_version']
-        ).export_indicator(
-            get_object_or_404(comet.Indicator, pk=self.kwargs['pk'])
-        )
-        return super(DHIS2ExportView, self).form_valid(form)
 
-
-class DHIS2ExportCompleteView(TemplateView):
+class DHIS2ExportCompleteView(TaskCompleteBaseView):
+    task_name = 'dhis2_export'
     template_name = 'indicators/dhis2_export_complete.html'
