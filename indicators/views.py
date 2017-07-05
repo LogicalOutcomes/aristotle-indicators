@@ -1,6 +1,7 @@
 import time
 from aristotle_mdr.contrib.browse.views import BrowseConcepts
 from aristotle_mdr.contrib.slots.models import Slot
+from aristotle_mdr.models import Status
 from celery.result import AsyncResult
 from comet import models as comet
 from django.conf import settings
@@ -20,7 +21,6 @@ from .forms import (
     CompareIndicatorsForm, DHIS2ExportForm, ImportForm, CleanDBForm,
     CleanCollectionForm
 )
-from .models import Goal
 from .tasks import (
     import_indicators, clean_data_base, clean_collection,
     dhis2_export
@@ -51,6 +51,21 @@ class BrowseIndicatorsAsHome(BrowseConcepts):
         context[param_name] = self.request.GET.getlist(param_name)
         return context
 
+    def get_status_context(self, context, concepts, slug_name='statuses', param_name='st'):
+        context[slug_name] = Status.objects.filter(
+            concept__in=concepts
+        ).values('state').annotate(count=Count('state')).order_by('-count')
+
+        # Force Preferred and Standard status first
+        preferred = [c for c in context[slug_name] if c['state'] == 6]
+        preferred = preferred[0] if preferred else {'state': 6, 'count': 0}
+        standard = [c for c in context[slug_name] if c['state'] == 5]
+        standard = standard[0] if standard else {'state': 5, 'count': 0}
+        context[slug_name] = [preferred, standard] + [c for c in context[slug_name] if c['state'] not in [6, 5]]
+
+        context[param_name] = self.request.GET.getlist(param_name)
+        return context
+
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
         self.kwargs['app'] = 'comet'
@@ -61,13 +76,9 @@ class BrowseIndicatorsAsHome(BrowseConcepts):
         context = self.get_slot_context(context, 'Collection',
                                         'collections', 'col', indicators)
 
-        # SDGs
-        context['sdgs'] = Goal.objects.all().annotate(count=Count('indicators')).exclude(count=0)
-        context['selected_sdgs'] = self.request.GET.getlist('sdgs')
-
-        # No Poverty
-        context = self.get_slot_context(context, 'No Poverty',
-                                        'no_poverty', 'no_pov', indicators)
+        # Outcomes (SubDomain)
+        context = self.get_slot_context(context, 'SubDomain',
+                                        'sub_domain', 'sdom', indicators)
 
         # Theory of Change
         context = self.get_slot_context(context, 'Theory of Change',
@@ -76,6 +87,9 @@ class BrowseIndicatorsAsHome(BrowseConcepts):
         # Data collection method
         context = self.get_slot_context(context, 'Data collection method',
                                         'data_collection_method', 'dcm', indicators)
+
+        # Statuses
+        context = self.get_status_context(context, indicators)
 
         return context
 
@@ -86,6 +100,12 @@ class BrowseIndicatorsAsHome(BrowseConcepts):
                                        slots__value__in=params)
         return queryset
 
+    def filter_queryset_by_status(self, queryset, param_name='st'):
+        params = self.request.GET.getlist(param_name)
+        if params:
+            queryset = queryset.filter(statuses__state__in=params)
+        return queryset
+
     def get_queryset(self, *args, **kwargs):
         queryset = super(BrowseIndicatorsAsHome, self).get_queryset(*args, **kwargs)
 
@@ -93,14 +113,9 @@ class BrowseIndicatorsAsHome(BrowseConcepts):
         queryset = self.filter_queryset_by_slot(queryset,
                                                 'Collection', 'col')
 
-        # filter SDGs
-        sdgs = self.request.GET.getlist('sdgs')
-        if sdgs:
-            queryset = queryset.filter(related_goals__short_name__in=sdgs)
-
-        # Filter No Poverty
+        # Filter Outcomes
         queryset = self.filter_queryset_by_slot(queryset,
-                                                'No Poverty', 'no_pov')
+                                                'SubDomain', 'sdom')
 
         # Filter Theory of Change
         queryset = self.filter_queryset_by_slot(queryset,
@@ -109,6 +124,9 @@ class BrowseIndicatorsAsHome(BrowseConcepts):
         # Data collection method
         queryset = self.filter_queryset_by_slot(queryset,
                                                 'Data collection method', 'dcm')
+
+        # Statuses
+        queryset = self.filter_queryset_by_status(queryset)
 
         return queryset.distinct()
 
