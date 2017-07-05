@@ -1,0 +1,34 @@
+{% comment %}
+Usage:
+    {% include 'aristotle_mdr_browse/comet/_status_filter.html' with name='Slot name' param_name='sln' slots=slots selected_slots=sln hide_title=False extra_classes='checkbox-inner' visible=2 more_text='other statuses' %}
+{% endcomment %}
+{% load i18n aristotle_search_tags logicaltags %}
+
+{% if not hide_title %}
+    <b class="indicator-filters_title">{% trans name %}</b>
+{% endif %}
+
+{% for value in statuses|sliceto:visible %}
+    <div class="checkbox {{extra_classes|default:''}}">
+        <label>
+            <input type="checkbox" name="{{param_name}}" value="{{value.state}}" {% if value.state in selected_statuses %}checked{% endif %}>
+            {{value.state|search_state_to_text}} <span class="text-muted">({{value.count}})</span>
+        </label>
+    </div>
+{% endfor %}
+
+
+<a class="indicator-filters_more-link" role="button" data-toggle="collapse" href="#statuses" aria-expanded="false" aria-controls="terms">
+    {% trans more_text %} <span class="caret"></span>
+</a>
+
+<div class="collapse {% if in_statuses %}in{% endif %}" id="statuses">
+    {% for value in statuses|slicefrom:visible %}
+        <div class="checkbox {{extra_classes|default:''}}">
+            <label>
+                <input type="checkbox" name="{{param_name}}" value="{{value.state}}" {% if value.state in selected_statuses %}checked{% endif %}>
+                {{value.state|search_state_to_text}} <span class="text-muted">({{value.count}})</span>
+            </label>
+        </div>
+    {% endfor %}
+</div>

@@ -65,6 +65,7 @@ def slot_unfacet(request, field, value):
 
     return dict_.urlencode()
 
+
 @register.simple_tag
 def slot_add_facet(request, field, value):
     # http://stackoverflow.com/questions/2047622/how-to-paginate-django-with-other-get-variables
@@ -86,3 +87,21 @@ def get_single_slot(concept, slot_name):
         return c
     else:
         return []
+
+
+@register.filter
+def sliceto(value, to):
+    """Use: {% for a in mylist|sliceto:z %}"""
+    try:
+        return value[:to]
+    except (ValueError, TypeError):
+        return value
+
+
+@register.filter
+def slicefrom(value, fr):
+    """Use: {% for a in mylist|slicefrom:z %}"""
+    try:
+        return value[fr:]
+    except (ValueError, TypeError):
+        return value
