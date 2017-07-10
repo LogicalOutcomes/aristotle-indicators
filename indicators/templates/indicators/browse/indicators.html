@@ -47,10 +47,7 @@ Showing {{ page.paginator.count }} results.
         <td>
         {% include "aristotle_mdr/helpers/itemLink.html" with item=item %}</td>
         <td>
-            {% include "indicators/helpers/slot_links.html" with slot_name='Data collection' last_coma=True %}
-            {% include "indicators/helpers/slot_links.html" with slot_name='No Poverty' last_coma=True %}
-            {% include "indicators/helpers/slot_links.html" with slot_name='Domain' last_coma=True %}
-            {% include "indicators/helpers/slot_links.html" with slot_name='SuDomain' last_coma=False %}
+            {% include "indicators/helpers/slot_links.html" with slot_name='Outcomes' last_coma=False %}
         </td>
         <td><input type="checkbox" id="id_items_{{item.id}}" name="items" value="{{item.id}}"></td>
     </tr>
