@@ -1,3 +1,4 @@
+import logging
 from aristotle_mdr import models
 from aristotle_mdr.contrib.identifiers import models as MDR_ID
 from aristotle_mdr.contrib.identifiers.models import ScopedIdentifier
@@ -8,6 +9,8 @@ from ..models import (
     Instrument, Goal, CategoryOption, CategoryCombination,
     Category
 )
+
+logger = logging.getLogger(__name__)
 
 
 class BaseImporter(object):
@@ -107,6 +110,7 @@ class BaseImporter(object):
             self.results['process'] = u'Procesing Method: {}. Row: {} - {}'.format(
                 method, cell.row, [c.value if c else '' for c in row]
             )
+            logger.info(self.results['process'])
 
     def log_error(self, msg):
         self.results['errors'].append(msg)
