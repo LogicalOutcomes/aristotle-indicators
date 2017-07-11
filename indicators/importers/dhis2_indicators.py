@@ -273,8 +273,8 @@ class IndicatorImporter(BaseImporter):
             languages = get_vcol(row, 'U')
             theory_of_change = get_vcol(row, 'V')
             data_collection = get_vcol(row, 'W')
-            domain = get_vcol(row, 'X')
-            sub_domain = get_vcol(row, 'Y')
+            sdg = get_vcol(row, 'X')
+            outcomes = get_vcol(row, 'Y')
 
             ind = self.get_from_identifier(code)
             if not ind:
@@ -311,8 +311,8 @@ class IndicatorImporter(BaseImporter):
             self.text_to_slots(ind, languages, 'Languages')
             self.text_to_slots(ind, theory_of_change, 'Theory of change')
             self.text_to_slots(ind, data_collection, 'Data collection')
-            self.text_to_slots(ind, domain, 'Domain')
-            self.text_to_slots(ind, sub_domain, 'SubDomain')
+            self.text_to_slots(ind, sdg, 'Sustainable development goals')
+            self.text_to_slots(ind, outcomes, 'Outcomes')
 
             # Add collection as slot field
             if self.collection:
