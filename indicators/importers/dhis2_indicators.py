@@ -38,6 +38,9 @@ class IndicatorImporter(BaseImporter):
         self.process_data_elements()
         self.process_indicator_types()
         self.process_indicators()
+        # Reload registry
+        self.clear_cache()
+        self.rebuild_index()
 
     def process_category_options(self):
         sheet = self.wb.get_sheet_by_name(self.SHEET_CATEGORY_OPTIONS)

@@ -5,7 +5,7 @@ Usage:
 {% load i18n %}
 
 {% if not hide_title %}
-    <b class="indicator-filters_title">{% trans name %}</b>
+    <b class="indicator-filters_title">{% trans name %}</b><br>
 {% endif %}
 
 {% for value in slots|slice:':4' %}
@@ -25,7 +25,7 @@ Usage:
     </p>
 
     <div class="collapse" id="{{param_name}}">
-        {% for value in statuses|slice:'4:' %}
+        {% for value in slots|slice:'4:' %}
             <div class="checkbox {{extra_classes|default:''}}">
                 <label>
                     <input type="checkbox" name="{{param_name}}" value="{{value.value}}" {% if value.value in selected_slots %}checked{% endif %}>

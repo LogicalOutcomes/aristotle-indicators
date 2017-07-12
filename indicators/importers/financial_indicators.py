@@ -73,6 +73,9 @@ class IndicatorImporter(BaseImporter):
         val_dom = None
         n = 0
         for i, row in enumerate(sheet.iter_rows(row_offset=2)):
+            if row[0].value and row[1].value is None and row[2].value is None:
+                continue
+
             meaning = row[1].value
             value = row[2].value or "-99"
             order = row[2].value or n

@@ -1,4 +1,7 @@
 import logging
+from django.core.cache import cache
+from django.core.management import call_command
+
 from aristotle_mdr import models
 from aristotle_mdr.contrib.identifiers import models as MDR_ID
 from aristotle_mdr.contrib.identifiers.models import ScopedIdentifier
@@ -114,6 +117,17 @@ class BaseImporter(object):
 
     def log_error(self, msg):
         self.results['errors'].append(msg)
+
+    def clear_cache(self):
+        cache.clear()
+        logger.info('Cache cleared')
+
+    def rebuild_index(self):
+        logger.info('Rebuilding index')
+        # TODO: only use 'update_index --remove'
+        call_command('rebuild_index', '--noinput')
+        logger.info('Finish building index')
+
 
 
 def has_required_cols(row, *args):

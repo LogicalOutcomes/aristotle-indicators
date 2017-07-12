@@ -77,15 +77,15 @@ class BrowseIndicatorsAsHome(BrowseConcepts):
                                         'collections', 'col', indicators)
 
         # Outcomes (SubDomain)
-        context = self.get_slot_context(context, 'SubDomain',
+        context = self.get_slot_context(context, 'Outcomes',
                                         'sub_domain', 'sdom', indicators)
 
         # Theory of Change
-        context = self.get_slot_context(context, 'Theory of Change',
+        context = self.get_slot_context(context, 'Theory of change',
                                         'theory_of_change', 'toc', indicators)
 
         # Data collection method
-        context = self.get_slot_context(context, 'Data collection method',
+        context = self.get_slot_context(context, 'Data collection',
                                         'data_collection_method', 'dcm', indicators)
 
         # Statuses
@@ -115,15 +115,15 @@ class BrowseIndicatorsAsHome(BrowseConcepts):
 
         # Filter Outcomes
         queryset = self.filter_queryset_by_slot(queryset,
-                                                'SubDomain', 'sdom')
+                                                'Outcomes', 'sdom')
 
         # Filter Theory of Change
         queryset = self.filter_queryset_by_slot(queryset,
-                                                'Theory of Change', 'toc')
+                                                'Theory of change', 'toc')
 
         # Data collection method
         queryset = self.filter_queryset_by_slot(queryset,
-                                                'Data collection method', 'dcm')
+                                                'Data collection', 'dcm')
 
         # Statuses
         queryset = self.filter_queryset_by_status(queryset)
