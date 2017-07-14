@@ -15,7 +15,12 @@ logger = get_task_logger(__name__)
     time_limit=(60 * 60) * 3 + 5,     # 3h 5min
     soft_time_limit=(60 * 60) * 3,    # 3h
 )
-def import_indicators(spreadsheet_path, spreadsheet_type, collection):
+def import_indicators(spreadsheet_path, spreadsheet_type, collection, clean=False):
+    if clean:
+        logger.info(u'Cleanning collection {}'.format(collection))
+        DBManager.clean_collection(collection)
+
+    logger.info(u'Importing indicators for collection {}'.format(collection))
     spreadsheet = default_storage.open(spreadsheet_path)
 
     if spreadsheet_type == 'DHIS2':

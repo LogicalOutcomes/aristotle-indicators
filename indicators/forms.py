@@ -81,6 +81,10 @@ class ImportForm(forms.Form):
         required=True, max_length=64,
         help_text='Collection name will be assigned to the imported indicators'
     )
+    clean_collection = forms.BooleanField(
+        initial=False,
+        help_text=_('First remove all elements of collection and then import')
+    )
 
 
 class CleanDBForm(forms.Form):

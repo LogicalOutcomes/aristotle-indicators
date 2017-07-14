@@ -189,7 +189,8 @@ class ImportView(SuperUserRequiredMixin, FormView):
             task = import_indicators.delay(
                 path,
                 form.cleaned_data['spreadsheet_type'],
-                form.cleaned_data['collection']
+                form.cleaned_data['collection'],
+                clean=form.cleaned_data.get('clean_collection')
             )
             self.request.session['import_task_id'] = task.id
             messages.add_message(self.request, messages.INFO, 'Importing file')
