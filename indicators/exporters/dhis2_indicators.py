@@ -1,6 +1,9 @@
+import logging
 import requests
 from django.utils.text import slugify
 from ..models import CategoryCombination
+
+logger = logging.getLogger(__name__)
 
 
 class DHIS2ClientException(Exception):
@@ -130,6 +133,8 @@ class DHIS2Exporter(object):
         return opt
 
     def export_data_element(self, obj):
+        logger.info(u'Export data element: {}'.format(obj))
+
         # Add category combination
         category_combo = None
         cat_combo_code = self.get_single_value_from_slot(obj, 'Category combination Code')
@@ -215,4 +220,6 @@ class DHIS2Exporter(object):
         return slot.value if slot else default
 
     def get_simple_repr(self, data, keys=['displayName', 'name', 'id']):
+        if not data:
+            return None
         return {k: v for k, v in data.items() if k in keys}
