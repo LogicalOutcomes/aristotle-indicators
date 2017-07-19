@@ -182,7 +182,7 @@ class DHIS2Exporter(object):
             res_den = self.export_data_element(den)
             code = self.get_code_from_identifier(den)
             denominators[code] = res_den
-            denominator = denominator.replace(code, '#{{{}}}'.format(res_num['id']))
+            denominator = denominator.replace(code, '#{{{}}}'.format(res_den['id']))
 
         # Indicator Type
         if obj.indicatorType:
