@@ -26,16 +26,20 @@ class DHIS2Client(object):
 
     # Basic calls
     def _get(self, url, params=None):
-        params = self.params.update(params) if params else self.params
+        q_params = self.params.copy()
+        if params:
+            q_params.update(params)
         return requests.get(
-            url, params=params,
+            url, params=q_params,
             auth=(self.user, self.password),
         )
 
     def _post(self, url, json=None, params=None):
-        params = self.params.update(params) if params else self.params
+        q_params = self.params.copy()
+        if params:
+            q_params.update(params)
         return requests.post(
-            url, json=json, params=params,
+            url, json=json, params=q_params,
             auth=(self.user, self.password),
         )
 
@@ -45,7 +49,10 @@ class DHIS2Client(object):
         if obj_id:
             url += '/{}'.format(obj_id)
         response = self._get(url, params=params)
-        return response.json()
+        try:
+            return response.json()
+        except Exception as e:
+            raise DHIS2ClientException('Error: {}'.format(e))
 
     def post(self, endpoint, data, obj_id=None):
         url = self.api_url + endpoint
