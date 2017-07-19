@@ -64,7 +64,7 @@ class DHIS2Client(object):
     def create_element(self, collection_name, data):
         res = self.post(collection_name, data)
         # raise if any error was found
-        if res['status'] in ['WARNING', 'ERROR']:
+        if 'status' in res and res['status'] in ['WARNING', 'ERROR']:
             raise DHIS2ClientException('Error: {}'.format(res))
         return res
 
