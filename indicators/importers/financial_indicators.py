@@ -22,9 +22,10 @@ class IndicatorImporter(BaseImporter):
     SHEET_INDICATORS = 'Indicators'
     SHEET_DATA_ELEMENTS = 'Data Elements'
 
-    def __init__(self, data_file, collection=None):
+    def __init__(self, data_file, collection=None, status=None):
         self.wb = load_workbook(data_file, read_only=True)
         self.collection = collection
+        self.status = status or models.STATES.recorded
 
     def process(self):
         self.process_authorities()

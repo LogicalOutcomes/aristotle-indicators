@@ -25,9 +25,10 @@ class IndicatorImporter(BaseImporter):
     SHEET_CATEGORY_COMBOS = 'CategoryCombos'
     SHEET_OPTIONS_SETS = 'OptionSets'
 
-    def __init__(self, data_file, collection=None):
+    def __init__(self, data_file, collection=None, status=None):
         self.wb = load_workbook(data_file, read_only=True)
         self.collection = collection or ''
+        self.status = status or models.STATES.recorded
 
     def process(self):
         self.process_authorities()
@@ -142,13 +143,12 @@ class IndicatorImporter(BaseImporter):
                         definition=self.DEFAULT_DEFINITION,
                         data_type=data_type,
                     )
-                    if created:
-                        self.register(val_dom)
                     # Add collection as slot field
                     if self.collection:
                         self.text_to_slots(val_dom, self.collection, 'Collection')
                     self.make_identifier(code, val_dom)
 
+                self.register(val_dom)
                 val_dom.permissiblevalue_set.all().delete()
                 value_domains[code] = {'val_dom': val_dom, 'options': []}
 
@@ -184,18 +184,17 @@ class IndicatorImporter(BaseImporter):
             comment_option_set = get_vcol(row, 'P')
 
             de = self.get_from_identifier(code)
-
             if not de:
                 de, c = models.DataElement.objects.get_or_create(
                     name=name,
                     short_name=short_name,
                     definition=description or name,
                 )
-                if c:
-                    self.register(de)
                 self.make_identifier(code, de)
                 # do not remove the slots collection so we can track dependencies
                 Slot.objects.filter(concept=de).exclude(name='Collection').delete()
+
+            self.register(de)
 
             # Add custom properties
             self.text_to_slots(de, form_name, 'Form name')
@@ -295,9 +294,10 @@ class IndicatorImporter(BaseImporter):
                         'rationale': rationale,
                     }
                 )
-                if c:
-                    self.register(ind)
                 self.make_identifier(code, ind)
+
+            self.register(ind)
+
             # clean previous data
             Slot.objects.filter(concept=ind).exclude(name='Collection').delete()
             ind.numerators.clear()

@@ -1,5 +1,6 @@
 from aristotle_mdr.contrib.autocomplete import widgets
 from aristotle_mdr.forms.bulk_actions import BulkActionForm, DownloadActionForm
+from aristotle_mdr.models import STATES
 from django import forms
 from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy as _
@@ -82,8 +83,12 @@ class ImportForm(forms.Form):
         help_text='Collection name will be assigned to the imported indicators'
     )
     clean_collection = forms.BooleanField(
-        initial=False,
+        initial=False, required=False,
         help_text=_('First remove all elements of collection and then import')
+    )
+    status = forms.ChoiceField(
+        choices=STATES, initial=STATES.recorded,
+        help_text=_('Initial status for the metadata to be imported')
     )
 
 
