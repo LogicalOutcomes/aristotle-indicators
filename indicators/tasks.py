@@ -15,7 +15,7 @@ logger = get_task_logger(__name__)
     time_limit=(60 * 60) * 3 + 5,     # 3h 5min
     soft_time_limit=(60 * 60) * 3,    # 3h
 )
-def import_indicators(spreadsheet_path, spreadsheet_type, collection, clean=False):
+def import_indicators(spreadsheet_path, spreadsheet_type, collection, clean=False, status=None):
     if clean:
         logger.info(u'Cleanning collection {}'.format(collection))
         DBManager.clean_collection(collection)
@@ -30,7 +30,8 @@ def import_indicators(spreadsheet_path, spreadsheet_type, collection, clean=Fals
 
     importer = importer_class(
         spreadsheet,
-        collection=collection
+        collection=collection,
+        status=status
     )
     try:
         importer.process()

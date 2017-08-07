@@ -70,7 +70,7 @@ class BrowseIndicatorsAsHome(BrowseConcepts):
         # Call the base implementation first to get a context
         self.kwargs['app'] = 'comet'
         context = super(BrowseIndicatorsAsHome, self).get_context_data(**kwargs)
-        indicators = comet.Indicator.objects.all()
+        indicators = comet.Indicator.objects.visible(self.request.user)
 
         # Collections
         context = self.get_slot_context(context, 'Collection',
@@ -128,7 +128,7 @@ class BrowseIndicatorsAsHome(BrowseConcepts):
         # Statuses
         queryset = self.filter_queryset_by_status(queryset)
 
-        return queryset.distinct()
+        return queryset.visible(self.request.user).distinct()
 
 
 class ExportIndicators(BrowseConcepts):
@@ -190,7 +190,8 @@ class ImportView(SuperUserRequiredMixin, FormView):
                 path,
                 form.cleaned_data['spreadsheet_type'],
                 form.cleaned_data['collection'],
-                clean=form.cleaned_data.get('clean_collection')
+                clean=form.cleaned_data.get('clean_collection'),
+                status=form.cleaned_data.get('status'),
             )
             self.request.session['import_task_id'] = task.id
             messages.add_message(self.request, messages.INFO, 'Importing file')

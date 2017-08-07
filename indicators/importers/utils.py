@@ -47,13 +47,17 @@ class BaseImporter(object):
         return dt
 
     def register(self, thing):
-        """Aristotle MDR regiter
         """
-        models.Status.objects.get_or_create(
+        Aristotle MDR regiter
+        this will create or update the status of an element
+        """
+        models.Status.objects.update_or_create(
             concept=thing,
             registrationAuthority=self.authority,
             registrationDate=self.DEFAULT_REGISTRATION_DATE,
-            state=models.STATES.recorded
+            defaults={
+                'state': self.status
+            }
         )
 
     def get_from_identifier(self, ident):
