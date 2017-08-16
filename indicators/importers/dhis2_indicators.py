@@ -277,6 +277,7 @@ class IndicatorImporter(BaseImporter):
             data_collection = get_vcol(row, 'W')
             sdg = get_vcol(row, 'X')
             outcomes = get_vcol(row, 'Y')
+            form_instructions = get_vcol(row, 'Z')
 
             ind = self.get_from_identifier(code)
             if not ind:
@@ -316,6 +317,7 @@ class IndicatorImporter(BaseImporter):
             self.text_to_slots(ind, data_collection, 'Data collection')
             self.text_to_slots(ind, sdg, 'Sustainable development goals')
             self.text_to_slots(ind, outcomes, 'Outcomes')
+            self.text_to_slots(ind, form_instructions, 'Form instructions')
 
             # Add collection as slot field
             if self.collection:
