@@ -1,5 +1,5 @@
 {% extends "aristotle_mdr/base.html" %}
-{% load aristotle_tags util_tags logicaltags %}
+{% load aristotle_tags util_tags logicaltags markdown_deux_tags %}
 
 {% block extra_head_scripts %}
 <style>
@@ -28,36 +28,48 @@
             </tr>
             <tr>
                 <th style="width:100px">Indicator Name</th>
-                <td>{% include "aristotle_mdr/helpers/itemLink.html" with item=indicators.0 %}</td>
-                <td>{% include "aristotle_mdr/helpers/itemLink.html" with item=indicators.1 %}</td>
-                <td>{% include "aristotle_mdr/helpers/itemLink.html" with item=indicators.2 %}</td>
+                {% for item in indicators %}
+                    <td>{% include "aristotle_mdr/helpers/itemLink.html" %}</td>
+                {% endfor %}
             </tr>
             </thead>
             <tbody>
             <tr>
-                <th>Question</th>
+                <th>Method of measurement</th>
                 {% for item in indicators %}
                 <td>
-                        {% for s in item|get_single_slot:"Question text" %}
-                            <p>{{s.value|safe}}</p>
+                        {% for s in item|get_single_slot:"Method of measurement" %}
+                            <p>{{s.value|markdown}}</p>
                         {% endfor %}
                 </td>
                 {% endfor %}
             </tr>
             <tr>
-                <th>Instrument</th>
-                <td>{% include "aristotle_mdr/helpers/itemLink.html" with item=indicators.0.instruments.first %}</td>
-                <td>{% include "aristotle_mdr/helpers/itemLink.html" with item=indicators.1.instruments.first %}</td>
-                <td>{% include "aristotle_mdr/helpers/itemLink.html" with item=indicators.2.instruments.first %}</td>
+                <th>Numerators</th>
+                {% for indicator in indicators %}
+                    <td>
+                        <ul>
+                        {% for item in indicator.numerators.all %}
+                            <li>
+                            {% include "aristotle_mdr/helpers/itemLink.html" %}
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    </td>
+                {% endfor %}
             </tr>
             <tr>
-                <th>Data collection method</th>
-                {% for item in indicators %}
-                <td>
-                    {% for s in item|get_single_slot:"Data collection method" %}
-                        <p>{{s.value|safe }}</p>
-                    {% endfor %}
-                </td>
+                <th>Value Domain</th>
+                {% for indicator in indicators %}
+                    <td>
+                        <ul>
+                        {% for item in indicator.numerators.all %}
+                            <li>
+                            {% include "aristotle_mdr/helpers/itemLink.html" with item=item.valueDomain%}
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    </td>
                 {% endfor %}
             </tr>
             <tr>
@@ -65,8 +77,16 @@
                 {% for item in indicators %}
                 <td>
                     {% for s in item|get_single_slot:"Languages" %}
-                        <p>{{s.value|safe }}</p>
+                        <p>{{s.value|markdown }}</p>
                     {% endfor %}
+                </td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <th>Rationale</th>
+                {% for item in indicators %}
+                <td>
+                    {{ item.rationale|markdown }}
                 </td>
                 {% endfor %}
             </tr>
@@ -74,47 +94,28 @@
                 <th>References</th>
                 {% for item in indicators %}
                 <td>
-                    {{item.references | safe}}
+                    {{item.references|markdown}}
                 </td>
                 {% endfor %}
             </tr>
             <tr>
-                <th>Population</th>
-                {% for item in indicators %}
-                <td>
-                    {% for s in item|get_single_slot:"Population" %}
-                        <p>{{s.value|safe }}</p>
-                    {% endfor %}
-                </td>
+                <th>Terms of Use</th>
+                {% for indicator in indicators %}
+                <td>{{ indicator.instruments.first.terms_of_use }}</td>
                 {% endfor %}
             </tr>
             <tr>
-                <th>Method of Measurement</th>
+                <th>Outcomes</th>
                 {% for item in indicators %}
                 <td>
-                    {% for s in item|get_single_slot:"Method of Measurement" %}
-                        <p>{{s.value|safe }}</p>
-                    {% endfor %}
-                </td>
-                {% endfor %}
-            </tr>
-            <tr>
-                <th>Rationale for selection</th>
-                {% for item in indicators %}
-                <td>
-                    {% for s in item|get_single_slot:"Rationale" %}
-                        <p>{{s.value|safe }}</p>
+                    {% for s in item|get_single_slot:"Outcomes" %}
+                        <p>{{s.value|markdown }}</p>
                     {% endfor %}
                 </td>
                 {% endfor %}
             </tr>
 
-            <tr>
-                <th>Terms of Use</th>
-                <td>{{ indicators.0.instruments.first.terms_of_use }}</td>
-                <td>{{ indicators.1.instruments.first.terms_of_use }}</td>
-                <td>{{ indicators.2.instruments.first.terms_of_use }}</td>
-            </tr>
+
             </tbody>
         </table>
     </div>
