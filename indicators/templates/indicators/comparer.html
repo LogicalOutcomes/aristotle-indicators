@@ -100,8 +100,12 @@
             </tr>
             <tr>
                 <th>Terms of Use</th>
-                {% for indicator in indicators %}
-                <td>{{ indicator.instruments.first.terms_of_use }}</td>
+                {% for item in indicators %}
+                <td>
+                    {% for s in item|get_single_slot:"Terms of use" %}
+                        <p>{{s.value|markdown }}</p>
+                    {% endfor %}
+                </td>
                 {% endfor %}
             </tr>
             <tr>
