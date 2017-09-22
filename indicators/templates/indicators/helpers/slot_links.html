@@ -4,5 +4,13 @@
 {% load logicaltags %}
 {% for slot in item|get_single_slot:slot_name %}
     <a href="{% url 'aristotle_slots:similar_slots' slot.name %}?value={{slot.value|urlencode}}">
-    {{slot.value.strip}}</a>{% if last_coma or not forloop.last %},{% endif %}
+    {{slot.value.strip}}</a>{% spaceless %}
+    {% if not forloop.last %},{% endif %}
+    {# check next slots to see if we should add a coma #}
+    {% if forloop.last and next_slot %}
+        {% with item|get_single_slot:next_slot as nexts %}
+            {% if nexts %},{% endif %}
+        {% endwith %}
+    {% endif %}
+    {% endspaceless %}
 {% endfor %}

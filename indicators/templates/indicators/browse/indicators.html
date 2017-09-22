@@ -47,7 +47,8 @@ Showing {{ page.paginator.count }} results.
         <td>
         {% include "aristotle_mdr/helpers/itemLink.html" with item=item %}</td>
         <td>
-            {% include "indicators/helpers/slot_links.html" with slot_name='Outcomes' last_coma=False %}
+            {% include "indicators/helpers/slot_links.html" with slot_name='Outcomes' next_slot='Inputs and outputs' %}
+            {% include "indicators/helpers/slot_links.html" with slot_name='Inputs and outputs' %}
         </td>
         <td><input type="checkbox" id="id_items_{{item.id}}" name="items" value="{{item.id}}"></td>
     </tr>

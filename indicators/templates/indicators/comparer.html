@@ -86,7 +86,7 @@
                 <th>Rationale</th>
                 {% for item in indicators %}
                 <td>
-                    {{ item.rationale|markdown }}
+                    {{ item.rationale|safe }}
                 </td>
                 {% endfor %}
             </tr>
@@ -94,7 +94,7 @@
                 <th>References</th>
                 {% for item in indicators %}
                 <td>
-                    {{item.references|markdown}}
+                    {{item.references|safe}}
                 </td>
                 {% endfor %}
             </tr>

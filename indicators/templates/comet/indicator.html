@@ -22,13 +22,13 @@
 
 {% if item.rationale %}
 <h2>Rationale</h2>
-<p>{{ item.rationale|markdown }}</p>
+<p>{{ item.rationale|safe }}</p>
 {% endif %}
 
 
 {% if item.computation_description or item.numerator_computation or item.denominator_computation %}
     <h2>Calculation rules</h2>
-    {{ item.computation_description|markdown }}
+    {{ item.computation_description|safe }}
     {% if item.numerator_computation or item.denominator_computation %}
     <h3>Computation Rule:</h3>
     <pre>{{ item.numerator_computation }}</pre>
@@ -58,7 +58,7 @@
 
 {% if item.disaggregation_description or item.disaggregators.all %}
 <h2>Disaggregation</h2>
-    {{ item.disaggregation_description|markdown }}
+    {{ item.disaggregation_description|safe }}
         <ul>
         {% for disagg in item.disaggregators.all %}
             <li>{% include "aristotle_mdr/helpers/itemLink.html" with item=disagg showType=False %}
