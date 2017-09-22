@@ -61,14 +61,14 @@
                 </ul>
             </li>
         </ul>
-        <span>Theory of Change</span>
+        <span>Inputs and outputs</span>
         <ul class="options">
-            {% for toc in request|toc_slot_values:"Theory of Change" %}
+            {% for toc in request|toc_slot_values:"Inputs and outputs" %}
             <li {% if toc.active %}class="active"{% endif %}>
                 {% if toc.active %}
-                {{toc.value}} ({{toc.num}}) <a href="{{request.path}}?{% slot_unfacet request 'Theory of Change' toc.value %}" class="badge-active badge pull-right">x</a>
+                {{toc.value}} ({{toc.num}}) <a href="{{request.path}}?{% slot_unfacet request 'Inputs and outputs' toc.value %}" class="badge-active badge pull-right">x</a>
                 {% else %}
-                <a href="{{request.path}}?{% slot_add_facet request 'Theory of Change' toc.value %}" class="fw">
+                <a href="{{request.path}}?{% slot_add_facet request 'Inputs and outputs' toc.value %}" class="fw">
                     {{toc.value}}
                     ({{toc.num}})
                     <span class='pull-right badge badge-add'>+</span>

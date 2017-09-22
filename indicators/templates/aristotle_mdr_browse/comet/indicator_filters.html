@@ -9,11 +9,11 @@
 
         {% include 'aristotle_mdr_browse/comet/_slot_filter.html' with name='Outcomes' param_name='sdom' selected_slots=sdom slots=sub_domain %}
 
-        {% include 'aristotle_mdr_browse/comet/_slot_filter.html' with name='Theory of Change' param_name='toc' selected_slots=toc slots=theory_of_change %}
+        {% include 'aristotle_mdr_browse/comet/_slot_filter.html' with name='Inputs and outputs' param_name='io' selected_slots=io slots=inputs_and_outputs %}
 
         {% include 'aristotle_mdr_browse/comet/_slot_filter.html' with name='Data collection method' param_name='dcm' selected_slots=dcm slots=data_collection_method %}
 
-        {% include 'aristotle_mdr_browse/comet/_status_filter.html' with name='Status' param_name='st' selected_statuses=st statuses=statuses visible=2 more_text='other statuses'%}        
+        {% include 'aristotle_mdr_browse/comet/_status_filter.html' with name='Status' param_name='st' selected_statuses=st statuses=statuses visible=2 more_text='other statuses'%}
     </form>
 </div>
 
