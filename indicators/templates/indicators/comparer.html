@@ -6,14 +6,45 @@
     table.table .select2-container {
         min-width:100%;
     }
+
+    /* Indidicator compare table styles for */
+    .indicator-comparer-table th {
+      max-width: 90px;
+      white-space: normal !important;
+    }
+    @media (min-width: 992px) {
+      .indicator-comparer-table th {
+        max-width: none;
+      }
+    }
+    .indicator-comparer-table td, .indicator-comparer-table .select2 {
+      max-width: 100px;
+      white-space: normal !important;
+      word-wrap: break-word;
+    }
+    @media (min-width: 768px) {
+      .indicator-comparer-table td, .indicator-comparer-table .select2 {
+        max-width: 100px;
+      }
+    }
+    @media (min-width: 992px) {
+      .indicator-comparer-table td, .indicator-comparer-table .select2 {
+        max-width: 150px;
+      }
+    }
+    @media (min-width: 1200px) {
+      .indicator-comparer-table td, .indicator-comparer-table .select2 {
+        max-width: 200px;
+      }
+    }
+
 </style>
 {% endblock %}
 
 {% block content %}
 <h2>{% block title %}Compare Indicators{% endblock %}</h2>
 <p>
-    Compare indicators by going to the ‘Browse Indicators’ page and selecting up to three.
-    A comparison is a good way to understand the pros and cons of similar-looking measures.
+    Use the drop-down box below to search for or browse and select up to three indicators to compare. You can also compare indicators by selecting up to three on the "Browse indicators" page. A comparison is a good way to understand the pros and cons of similar-looking measures.
 </p>
 <form>
     <input class="btn btn-default" type="submit" value="Compare selected indicators"></input>
@@ -35,12 +66,10 @@
             </thead>
             <tbody>
             <tr>
-                <th>Method of measurement</th>
+                <th>Definition</th>
                 {% for item in indicators %}
                 <td>
-                        {% for s in item|get_single_slot:"Method of measurement" %}
-                            <p>{{s.value|markdown}}</p>
-                        {% endfor %}
+                    {{ item.definition|safe }}
                 </td>
                 {% endfor %}
             </tr>
@@ -59,26 +88,10 @@
                 {% endfor %}
             </tr>
             <tr>
-                <th>Value Domain</th>
-                {% for indicator in indicators %}
-                    <td>
-                        <ul>
-                        {% for item in indicator.numerators.all %}
-                            <li>
-                            {% include "aristotle_mdr/helpers/itemLink.html" with item=item.valueDomain%}
-                            </li>
-                        {% endfor %}
-                        </ul>
-                    </td>
-                {% endfor %}
-            </tr>
-            <tr>
-                <th>Languages</th>
+                <th>Numerator description</th>
                 {% for item in indicators %}
                 <td>
-                    {% for s in item|get_single_slot:"Languages" %}
-                        <p>{{s.value|markdown }}</p>
-                    {% endfor %}
+                    {{ item.numerator_description|safe }}
                 </td>
                 {% endfor %}
             </tr>
@@ -103,22 +116,24 @@
                 {% for item in indicators %}
                 <td>
                     {% for s in item|get_single_slot:"Terms of use" %}
-                        <p>{{s.value|markdown }}</p>
+                        <p>{{s.value|safe }}</p>
                     {% endfor %}
                 </td>
                 {% endfor %}
             </tr>
             <tr>
-                <th>Outcomes</th>
+                <th>Logic model </th>
                 {% for item in indicators %}
                 <td>
+                    {% for s in item|get_single_slot:"Inputs and outputs" %}
+                        <p>{{s.value|markdown }}</p>
+                    {% endfor %}
                     {% for s in item|get_single_slot:"Outcomes" %}
                         <p>{{s.value|markdown }}</p>
                     {% endfor %}
                 </td>
                 {% endfor %}
             </tr>
-
 
             </tbody>
         </table>

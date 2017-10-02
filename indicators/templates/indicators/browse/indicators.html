@@ -31,7 +31,7 @@ Showing {{ page.paginator.count }} results.
         </th>
         <th>{% trans 'Categories (click to see which indicators belong to that category)' %}</th>
         <th>
-            {% trans "Compare up to 3" %}
+            {% trans "Select" %}
             {% if allow_select_all %}
             <input title='{% trans "Select all" %}' type="checkbox" id="all_in_queryset" name="all_in_queryset">
             <input type="hidden" name="qs" value="{{ select_all_list_queryset_filter }}">
