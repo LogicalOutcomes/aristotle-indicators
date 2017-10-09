@@ -1,6 +1,8 @@
 from aristotle_mdr.contrib.autocomplete import widgets
 from aristotle_mdr.forms.bulk_actions import BulkActionForm, DownloadActionForm
-from aristotle_mdr.models import STATES
+from aristotle_mdr.models import (STATES, DataElementConcept, ObjectClass,
+                                  Property)
+from ckeditor.widgets import CKEditorWidget
 from django import forms
 from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy as _
@@ -50,6 +52,103 @@ class CompareRedirectBulkActionForm(BulkActionForm):
         raise Redirect(
             url=reverse('comparer') + "?" + "&".join(['items=%s' % i.id for i in items])
         )
+
+
+class QuickCreateDataElementConcept(forms.Form):
+
+    data_element_concept_name = forms.CharField(required=False)
+    data_element_concept_definition = forms.CharField(required=False, widget=CKEditorWidget())
+
+    object_class_name = forms.CharField(required=False)
+    object_class_definition = forms.CharField(required=False, widget=CKEditorWidget())
+
+    property_name = forms.CharField(required=False)
+    property_definition = forms.CharField(required=False, widget=CKEditorWidget())
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user')
+        self.data_element_concepts = DataElementConcept.objects.visible(self.user)
+        self.object_class = ObjectClass.objects.visible(self.user)
+        self.property = Property.objects.visible(self.user)
+
+        super(QuickCreateDataElementConcept, self).__init__(*args, **kwargs)
+        self.fields['data_element_concept'] = forms.ModelChoiceField(
+            queryset=self.data_element_concepts,
+            empty_label="None",
+            label=_("Data Element Concept"),
+            required=False,
+            widget=widgets.ConceptAutocompleteSelect(model=DataElementConcept)
+        )
+        self.fields['object_class'] = forms.ModelChoiceField(
+            queryset=self.object_class,
+            empty_label="None",
+            label=_("Object Class"),
+            required=False,
+            widget=widgets.ConceptAutocompleteSelect(model=ObjectClass)
+        )
+        self.fields['property'] = forms.ModelChoiceField(
+            queryset=self.property,
+            empty_label="None",
+            label=_("Property"),
+            required=False,
+            widget=widgets.ConceptAutocompleteSelect(model=Property)
+        )
+
+    def clean(self):
+        cleaned_data = super(QuickCreateDataElementConcept, self).clean()
+
+        data_element_concept = cleaned_data.get('data_element_concept')
+        data_element_concept_name = cleaned_data.get('data_element_concept_name')
+        data_element_concept_definition = cleaned_data.get('data_element_concept_definition')
+
+        object_class = cleaned_data.get('object_class')
+        object_class_name = cleaned_data.get('object_class_name')
+        object_class_definition = cleaned_data.get('object_class_definition')
+
+        property = cleaned_data.get('property')
+        property_name = cleaned_data.get('property_name')
+        property_definition = cleaned_data.get('property_definition')
+
+        if data_element_concept and (data_element_concept_name or data_element_concept_definition or
+                                     object_class or object_class_name or object_class_definition or
+                                     property or property_name or property_definition):
+            # CASE: existing Data Element Concept
+            raise forms.ValidationError(
+                "If you select a Data Element Concept all other fields should be blank. "
+                "Please expand the forms and remove the content of Object Class and Property fields"
+            )
+        elif not data_element_concept:
+            # CASE: new Data Element Concept
+            if not data_element_concept_name:
+                self.add_error('data_element_concept_name', 'This field is required')
+            if not data_element_concept_definition:
+                self.add_error('data_element_concept_definition', 'This field is required')
+
+        if object_class and (object_class_name or object_class_definition):
+            # CASE: existing Object Class
+            raise forms.ValidationError(
+                "If you select an Object Class all fields should be blank. "
+                "Please expand the Object Class forms and remove the content on the fields"
+            )
+        elif not object_class:
+            # CASE: new Object Class
+            if not object_class_name:
+                self.add_error('object_class_name', 'This field is required')
+            if not object_class_definition:
+                self.add_error('object_class_definition', 'This field is required')
+
+        if property and (property_name or property_definition):
+            # CASE: existing Object Class
+            raise forms.ValidationError(
+                "If you select a Property all other fields should be blank. "
+                "Please expand the Property forms and remove the content on the fields"
+            )
+        elif not property:
+            # CASE: new Object Class
+            if not property_name:
+                self.add_error('property_name', 'This field is required')
+            if not property_definition:
+                self.add_error('property_definition', 'This field is required')
 
 
 class QuickPDFExportDownloadForm(DownloadActionForm):

@@ -1,0 +1,110 @@
+{% extends request.is_ajax|yesno:"aristotle_mdr/base_ajax.html,aristotle_mdr/base.html" %}
+{% load compile_static i18n %}
+{% load static from staticfiles %}
+
+{% block title %}Adding Data Element Concept for {{ item.name }}{% endblock %}
+{% block content %}
+
+<form method="post" action="{{ submit_url }}" >
+    <div class="modal-body">
+        <ol class="breadcrumb">
+          <li><a href="{% url 'aristotle:item' item.id %}">{{ item.name }}</a></li>
+          <li class="active">Add Data Element Concept</li>
+        </ol>
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {{form.non_field_errors}}
+        </div>
+        {% endif %}
+
+    {% csrf_token %}
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        Data Element Concept
+                    </div>
+                    <div class="panel-body">
+                        {% include "indicators/helpers/fancy_form_field.html" with field=form.data_element_concept %}
+
+                        <br>
+                        <a class="" role="button" data-toggle="collapse" href="#newDataElementConcept" aria-expanded="false" aria-controls="newDataElementConcept">
+                            Create new Data Element Concept <span class="caret"></span>
+                        </a><br><br>
+                        <div id="newDataElementConcept" class="collapse {% if form.errors %}in{% endif %}">
+                            {% include "indicators/helpers/fancy_form_field.html" with field=form.data_element_concept_name %}
+
+                            {% include "indicators/helpers/fancy_form_field.html" with field=form.data_element_concept_definition %}
+
+                            <div class="row">
+                                    <div class="col-sm-12">
+
+                                        <div class="panel panel-info">
+                                            <div class="panel-heading">
+                                                Object Class
+                                            </div>
+                                            <div class="panel-body">
+                                                {% include "indicators/helpers/fancy_form_field.html" with field=form.object_class %}
+                                                <br>
+                                                <a class="" role="button" data-toggle="collapse" href="#newObjectClass" aria-expanded="false" aria-controls="newObjectClass">
+                                                    Create new Object Class <span class="caret"></span>
+                                                </a><br><br>
+
+                                                <div id="newObjectClass" class="collapse">
+                                                    {% include "indicators/helpers/fancy_form_field.html" with field=form.object_class_name %}
+                                                    {% include "indicators/helpers/fancy_form_field.html" with field=form.object_class_definition %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-sm-12">
+                                        <div class="panel panel-info">
+                                            <div class="panel-heading">
+                                                Property
+                                            </div>
+                                            <div class="panel-body">
+                                                {% include "indicators/helpers/fancy_form_field.html" with field=form.property %}
+                                                <br>
+                                                <a class="" role="button" data-toggle="collapse" href="#newProperty" aria-expanded="false" aria-controls="newProperty">
+                                                    Create new Property <span class="caret"></span>
+                                                </a><br><br>
+                                                <div id="newProperty" class="collapse">
+                                                    {% include "indicators/helpers/fancy_form_field.html" with field=form.property_name %}
+                                                    {% include "indicators/helpers/fancy_form_field.html" with field=form.property_definition %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="modal-footer">
+        {% if request.is_ajax %}
+            <button type="button" class="btn btn-default" data-dismiss="modal">
+                <i class="fa fa-times"></i>Cancel</button>
+        {% else %}
+            <a class="btn btn-default" href="{% url 'aristotle:item' item.id %}">
+                <i class="fa fa-times"></i>
+                Cancel</a>
+        {% endif %}
+        <button type="submit" class="btn btn-primary" value="Save" accesskey='s'>
+            <i class="fa fa-save"></i> Save
+        </button>
+    </div>
+</form>
+    {% block extra_head_scripts %}
+        <link rel="stylesheet" href="{% static 'aristotle_mdr/aristotle.moveable.less'|compile %}" />
+        {{ form.media }}
+    {% endblock %}
+{% endblock %}

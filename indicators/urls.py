@@ -1,10 +1,11 @@
 from django.conf.urls import url
 from django.views.generic import TemplateView
-from .views import (
-    BrowseIndicatorsAsHome, comparer, DHIS2ExportView, DHIS2ExportCompleteView,
-    ImportView, ImportCompleteView, CleanDBView, ImportDashboardView,
-    CleanDBCompleteView, CleanCollectionView, CleanCollectionCompleteView,
-)
+
+from .views import (BrowseIndicatorsAsHome, CleanCollectionCompleteView,
+                    CleanCollectionView, CleanDBCompleteView, CleanDBView,
+                    CreateDataElementConcept, DHIS2ExportCompleteView,
+                    DHIS2ExportView, ImportCompleteView, ImportDashboardView,
+                    ImportView, comparer)
 
 urlpatterns = [
     url(r'^/?$', BrowseIndicatorsAsHome.as_view(), name='lo_home'),
@@ -12,6 +13,7 @@ urlpatterns = [
     url(r'^export/?$', TemplateView.as_view(template_name='indicators/static/export.html'), name="exporter"),
     url(r'^comparer/?$', comparer, name='comparer'),
 
+    url(r'^item/(?P<iid>\d+)?/new-quick/data-element-concept/$', CreateDataElementConcept.as_view(), name='indicators_create_data_element_concept'),
     url(r'^import/dashboard/$', ImportDashboardView.as_view(), name='indicators_import_dashboard'),
     url(r'^import/clean-db/$', CleanDBView.as_view(), name='indicators_clean_db_form'),
     url(r'^import/clean-db/complete/$', CleanDBCompleteView.as_view(), name='indicators_clean_db_complete'),
