@@ -1,7 +1,10 @@
 import time
+
+import reversion
 from aristotle_mdr.contrib.browse.views import BrowseConcepts
+from aristotle_mdr.contrib.generic.views import GenericWithItemURLView
 from aristotle_mdr.contrib.slots.models import Slot
-from aristotle_mdr.models import Status
+from aristotle_mdr.models import DataElement, Status, DataElementConcept, ObjectClass, Property
 from celery.result import AsyncResult
 from comet import models as comet
 from django.conf import settings
@@ -9,22 +12,21 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.files.storage import default_storage
 from django.core.urlresolvers import reverse
+from django.db import transaction
 from django.db.models import Count
-from django.shortcuts import get_object_or_404
-from django.shortcuts import redirect
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.decorators import method_decorator
+from django.utils.encoding import force_text
+from django.utils.translation import ugettext as _
 from django.views.generic import TemplateView
 from django.views.generic.edit import FormView
 from django_celery_results.models import TaskResult
-from .forms import (
-    CompareIndicatorsForm, DHIS2ExportForm, ImportForm, CleanDBForm,
-    CleanCollectionForm
-)
-from .tasks import (
-    import_indicators, clean_data_base, clean_collection,
-    dhis2_export
-)
+from datetime import date
+
+from .forms import (CleanCollectionForm, CleanDBForm, CompareIndicatorsForm,
+                    DHIS2ExportForm, ImportForm, QuickCreateDataElementConcept)
+from .tasks import (clean_collection, clean_data_base, dhis2_export,
+                    import_indicators)
 
 
 class SuperUserRequiredMixin(object):
@@ -165,6 +167,94 @@ def comparer(request):
     return render(request, 'indicators/comparer.html', {
         'indicators': indicators, "form": form
     })
+
+
+class CreateDataElementConcept(SuperUserRequiredMixin, GenericWithItemURLView, FormView):
+    template_name = 'indicators/new_data_element_concept.html'
+    form_class = QuickCreateDataElementConcept
+    model_base = DataElement
+
+    def get_form_kwargs(self):
+        kwargs = super(CreateDataElementConcept, self).get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
+    def save_reversion(self, reversion):
+        reversion.revisions.set_user(self.request.user)
+        reversion.revisions.set_comment(
+            _(u'Altered relationship of dataElementConcept for {name} "{object}" with Quick Create Data Element Concept.'.format(
+                name=force_text(self.item._meta.verbose_name),
+                object=force_text(self.item)
+            ))
+        )
+
+    def copy_data_element_state(self, concept):
+        for st in self.item.current_statuses():
+            Status.objects.update_or_create(
+                concept=concept,
+                registrationAuthority=st.registrationAuthority,
+                registrationDate=date.today(),
+                state=st.state
+            )
+
+    def form_valid(self, form):
+        res = super(CreateDataElementConcept, self).form_valid(form)
+        # TODO: Create with self.item status
+
+        # CASE: existing Data Element Concept
+        if form.cleaned_data.get('data_element_concept'):
+            with transaction.atomic(), reversion.revisions.create_revision():
+                self.item.dataElementConcept = form.cleaned_data['data_element_concept']
+                self.item.save()
+                self.save_reversion(reversion)
+            return res
+
+        # CASE: existing Object Class
+        if form.cleaned_data.get('object_class'):
+            obj_class = form.cleaned_data['object_class']
+        # CASE: new Object class
+        else:
+            obj_class = ObjectClass.objects.create(
+                name=form.cleaned_data.get('object_class_name'),
+                definition=form.cleaned_data.get('object_class_definition'),
+                workgroup=self.item.workgroup
+            )
+            # Assign data element status base on user input
+            if form.cleaned_data.get('copy_data_element_state'):
+                self.copy_data_element_state(obj_class)
+
+        # CASE: existing Property
+        if form.cleaned_data.get('property'):
+            prop = form.cleaned_data['property']
+        # CASE: new Object class
+        else:
+            prop = Property.objects.create(
+                name=form.cleaned_data.get('property_name'),
+                definition=form.cleaned_data.get('property_definition'),
+                workgroup=self.item.workgroup
+            )
+            # Assign data element status base on user input
+            if form.cleaned_data.get('copy_data_element_state'):
+                self.copy_data_element_state(prop)
+
+        # CASE: new Data Element Concept
+        with transaction.atomic(), reversion.revisions.create_revision():
+            dec = DataElementConcept.objects.create(
+                name=form.cleaned_data.get('data_element_concept_name'),
+                definition=form.cleaned_data.get('data_element_concept_definition'),
+                workgroup=self.item.workgroup,
+                property=prop,
+                objectClass=obj_class,
+            )
+            self.item.dataElementConcept = dec
+            self.item.save()
+            self.save_reversion(reversion)
+
+        # Assign data element status base on user input
+        if form.cleaned_data.get('copy_data_element_state'):
+            self.copy_data_element_state(dec)
+
+        return res
 
 
 class ImportDashboardView(SuperUserRequiredMixin, TemplateView):
