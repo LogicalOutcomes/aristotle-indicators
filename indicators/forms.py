@@ -71,7 +71,8 @@ class QuickCreateDataElementConcept(forms.Form):
     )
     property_definition = forms.CharField(required=False, widget=CKEditorWidget())
     copy_data_element_state = forms.BooleanField(
-        initial=True, help_text=_('Appy the same state of the Data Element to concepts to be created')
+        initial=True, required=False,
+        help_text=_('Appy the same state of the Data Element to concepts to be created')
     )
 
     def __init__(self, *args, **kwargs):

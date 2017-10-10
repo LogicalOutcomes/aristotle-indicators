@@ -12,3 +12,5 @@ coveralls
 whoosh
 django_tools
 mock
+django-markdown-deux
+django-pagedown

@@ -36,6 +36,8 @@ INSTALLED_APPS = (
     'mallard_qr',
     'indicators',
     'django_celery_results',
+    'pagedown',
+    'markdown_deux',
 ) + INSTALLED_APPS
 
 HAYSTACK_CONNECTIONS = {
