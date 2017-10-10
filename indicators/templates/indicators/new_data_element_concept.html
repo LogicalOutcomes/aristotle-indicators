@@ -76,6 +76,9 @@
                                                 </div>
                                             </div>
                                         </div>
+
+                                        {% include "indicators/helpers/fancy_form_field.html" with field=form.copy_data_element_state %}
+
                                     </div>
                             </div>
 
@@ -103,6 +106,7 @@
         </button>
     </div>
 </form>
+
     {% block extra_head_scripts %}
         <link rel="stylesheet" href="{% static 'aristotle_mdr/aristotle.moveable.less'|compile %}" />
         {{ form.media }}

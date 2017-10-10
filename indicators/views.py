@@ -21,6 +21,7 @@ from django.utils.translation import ugettext as _
 from django.views.generic import TemplateView
 from django.views.generic.edit import FormView
 from django_celery_results.models import TaskResult
+from datetime import date
 
 from .forms import (CleanCollectionForm, CleanDBForm, CompareIndicatorsForm,
                     DHIS2ExportForm, ImportForm, QuickCreateDataElementConcept)
@@ -181,15 +182,23 @@ class CreateDataElementConcept(SuperUserRequiredMixin, GenericWithItemURLView, F
     def save_reversion(self, reversion):
         reversion.revisions.set_user(self.request.user)
         reversion.revisions.set_comment(
-            _(u'Altered relationship of dataElementConcept for {name} "{object}".'.format(
+            _(u'Altered relationship of dataElementConcept for {name} "{object}" with Quick Create Data Element Concept.'.format(
                 name=force_text(self.item._meta.verbose_name),
                 object=force_text(self.item)
             ))
         )
 
+    def copy_data_element_state(self, concept):
+        for st in self.item.current_statuses():
+            Status.objects.update_or_create(
+                concept=concept,
+                registrationAuthority=st.registrationAuthority,
+                registrationDate=date.today(),
+                state=st.state
+            )
+
     def form_valid(self, form):
         res = super(CreateDataElementConcept, self).form_valid(form)
-
         # TODO: Create with self.item status
 
         # CASE: existing Data Element Concept
@@ -210,6 +219,9 @@ class CreateDataElementConcept(SuperUserRequiredMixin, GenericWithItemURLView, F
                 definition=form.cleaned_data.get('object_class_definition'),
                 workgroup=self.item.workgroup
             )
+            # Assign data element status base on user input
+            if form.cleaned_data.get('copy_data_element_state'):
+                self.copy_data_element_state(obj_class)
 
         # CASE: existing Property
         if form.cleaned_data.get('property'):
@@ -221,6 +233,9 @@ class CreateDataElementConcept(SuperUserRequiredMixin, GenericWithItemURLView, F
                 definition=form.cleaned_data.get('property_definition'),
                 workgroup=self.item.workgroup
             )
+            # Assign data element status base on user input
+            if form.cleaned_data.get('copy_data_element_state'):
+                self.copy_data_element_state(prop)
 
         # CASE: new Data Element Concept
         with transaction.atomic(), reversion.revisions.create_revision():
@@ -235,11 +250,10 @@ class CreateDataElementConcept(SuperUserRequiredMixin, GenericWithItemURLView, F
             self.item.save()
             self.save_reversion(reversion)
 
-        return res
+        # Assign data element status base on user input
+        if form.cleaned_data.get('copy_data_element_state'):
+            self.copy_data_element_state(dec)
 
-    def form_invalid(self, form):
-        res = super(CreateDataElementConcept, self).form_invalid(form)
-        import ipdb; ipdb.set_trace()
         return res
 
 
