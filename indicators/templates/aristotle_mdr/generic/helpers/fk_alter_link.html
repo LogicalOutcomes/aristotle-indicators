@@ -1,0 +1,33 @@
+{% load aristotle_tags %}
+{% if parent_item|can_edit:request.user %}
+    {% if item %}
+        <a href="{{ item.get_absolute_url }}">
+        {% if space %}
+            {% zws item.name %}
+        {% else %}
+            {{ item.name }}
+        {% endif %}
+        </a>
+        <a class='inline_action'
+            data-toggle="modal" data-target="#fk_editor"
+            href="{% url 'aristotle:generic_foreign_key_editor' parent_item.pk field %}">
+            Edit
+        </a>
+    {% else %}
+        <em>None
+        <a class='inline_action'
+            data-toggle="modal" data-target="#fk_editor"
+            href="{% url 'aristotle:generic_foreign_key_editor' parent_item.pk field %}">
+            Add
+        </a></em>
+        {% if field == 'dataElementConcept' %}
+            <a class='inline_action'
+                data-toggle="modal" data-target="#fk_editor"
+                href="{% url 'indicators_create_data_element_concept' parent_item.pk %}">
+                Quick Add
+            </a>
+        {% endif %}
+    {% endif %}
+{% else %}
+    {% include "aristotle_mdr/helpers/itemLink.html" with item=item %}
+{% endif %}
