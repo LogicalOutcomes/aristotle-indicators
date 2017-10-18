@@ -1,12 +1,10 @@
-from django.contrib import admin
+from aristotle_mdr.models import DataElement
 from aristotle_mdr.register import register_concept
-from .models import (
-    Category,
-    CategoryCombination,
-    CategoryOption,
-    Goal,
-    Instrument,
-)
+from django.contrib import admin
+from import_export import resources
+
+from .models import (Category, CategoryCombination, CategoryOption, Goal,
+                     Instrument)
 
 register_concept(Instrument)
 register_concept(Goal)
@@ -25,3 +23,8 @@ class CategoryAdmin(admin.ModelAdmin):
 @admin.register(CategoryCombination)
 class CategoryCombinationAdmin(admin.ModelAdmin):
     list_display = ['code', 'short_name', 'name']
+
+
+class DataElementResource(resources.ModelResource):
+    class Meta:
+        model = DataElement

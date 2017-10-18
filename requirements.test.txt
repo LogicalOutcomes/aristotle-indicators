@@ -14,3 +14,4 @@ django_tools
 mock
 django-markdown-deux
 django-pagedown
+django-import-export

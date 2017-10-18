@@ -38,6 +38,7 @@ INSTALLED_APPS = (
     'django_celery_results',
     'pagedown',
     'markdown_deux',
+    'import_export',
 ) + INSTALLED_APPS
 
 HAYSTACK_CONNECTIONS = {
