@@ -193,7 +193,7 @@ class CreateDataElementConcept(SuperUserRequiredMixin, GenericWithItemURLView, F
             Status.objects.update_or_create(
                 concept=concept,
                 registrationAuthority=st.registrationAuthority,
-                registrationDate=date.today(),
+                registrationDate=st.registrationDate,
                 state=st.state
             )
 
