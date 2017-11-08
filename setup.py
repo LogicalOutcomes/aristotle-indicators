@@ -32,6 +32,7 @@ setup(
         'aristotle-metadata-registry',
         'openpyxl',
         'celery',
+        'unicodecsv',
         'django_celery_results',
         'requests',
         'mock',
