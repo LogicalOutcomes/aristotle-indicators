@@ -1,10 +1,13 @@
 import time
 
 import reversion
+import unicodecsv as csv
 from aristotle_mdr.contrib.browse.views import BrowseConcepts
 from aristotle_mdr.contrib.generic.views import GenericWithItemURLView
 from aristotle_mdr.contrib.slots.models import Slot
-from aristotle_mdr.models import DataElement, Status, DataElementConcept, ObjectClass, Property
+from aristotle_mdr.models import (DataElement, DataElementConcept, ObjectClass,
+                                  Property, Status, SupplementaryValue,
+                                  ValueDomain)
 from celery.result import AsyncResult
 from comet import models as comet
 from django.conf import settings
@@ -14,14 +17,15 @@ from django.core.files.storage import default_storage
 from django.core.urlresolvers import reverse
 from django.db import transaction
 from django.db.models import Count
+from django.http import StreamingHttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.decorators import method_decorator
 from django.utils.encoding import force_text
 from django.utils.translation import ugettext as _
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, View
 from django.views.generic.edit import FormView
 from django_celery_results.models import TaskResult
-from datetime import date
+from indicators.templatetags.logicaltags import get_single_slot
 
 from .forms import (CleanCollectionForm, CleanDBForm, CompareIndicatorsForm,
                     DHIS2ExportForm, ImportForm, QuickCreateDataElementConcept)
@@ -255,6 +259,129 @@ class CreateDataElementConcept(SuperUserRequiredMixin, GenericWithItemURLView, F
             self.copy_data_element_state(dec)
 
         return res
+
+
+# Export views
+class Echo(object):
+    """An object that implements just the write method of the file-like
+    interface.
+    """
+    def write(self, value):
+        """Write the value by returning it, instead of storing in a buffer."""
+        return value
+
+
+class BaseExport(SuperUserRequiredMixin, View):
+
+    filename = 'export.csv'
+
+    def get(self, request, *args, **kwargs):
+        pseudo_buffer = Echo()
+        writer = csv.writer(pseudo_buffer)
+        rows = self.get_rows(writer)
+        response = StreamingHttpResponse(rows, content_type="text/csv")
+        response['Content-Disposition'] = 'attachment; filename="{}"'.format(self.filename)
+        return response
+
+    def get_rows(self):
+        raise NotImplementedError(
+            'You need to implement a method that returns an '
+            'iterator with the rows of the CSV file'
+        )
+
+    def get_slot(self, concept, slots):
+        for slot in slots:
+            slot = get_single_slot(concept, slot).first()
+            if slot and slot.value:
+                return slot.value
+        return None
+
+    def get_code(self, concept):
+        res = []
+        for ident in concept.identifiers.all():
+            res.append(ident.identifier)
+        if res:
+            return u', '.join(res)
+        else:
+            return concept.id
+
+
+class ExportDataElements(BaseExport):
+    filename = 'data_elements.csv'
+
+    def get_rows(self, writer):
+        # header
+        yield writer.writerow((
+            'ID',
+            'Code',
+            'Short name',
+            'Name',
+            'Definition',
+            'Value type',
+            'Form name',
+            'Terms of use',
+            'Value domain',
+        ))
+        # rows
+        for de in DataElement.objects.all():
+            yield writer.writerow((
+                de.id,
+                self.get_code(de),
+                de.short_name,
+                de.name,
+                de.definition,
+                self.get_slot(de, ['Value type']),
+                self.get_slot(de, ['Form name', 'Form name EN']),
+                self.get_slot(de, ['Terms of use']),
+                self.get_code(de.valueDomain) if de.valueDomain else None,
+            ))
+
+
+class ExportValueDomains(BaseExport):
+
+    filename = 'value_domains.csv'
+
+    def get_rows(self, writer):
+        yield writer.writerow((
+            'ID',
+            'Code',
+            'Short name',
+            'Name',
+            'Value',
+            'Meaning',
+        ))
+        # rows
+        for vd in ValueDomain.objects.all():
+            # Permissible Values of the Value Domain
+            for pv in vd.permissibleValues:
+                yield writer.writerow((
+                    vd.id,
+                    self.get_code(vd),
+                    vd.short_name,
+                    vd.name,
+                    pv.value,
+                    pv.meaning,
+                ))
+            # Supplementary Values of the Value Domain
+            for sv in vd.supplementaryValues:
+                yield writer.writerow((
+                    vd.id,
+                    self.get_code(vd),
+                    vd.short_name,
+                    vd.name,
+                    sv.value,
+                    sv.meaning,
+                ))
+            # Empty Value Domain
+            if not vd.permissibleValues and not vd.supplementaryValues:
+                yield writer.writerow((
+                    vd.id,
+                    self.get_code(vd),
+                    vd.short_name,
+                    vd.name,
+                    None,
+                    None,
+                ))
 
 
 class ImportDashboardView(SuperUserRequiredMixin, TemplateView):

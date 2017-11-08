@@ -8,8 +8,49 @@
 {% block page %}
 
     <h1 class="text-center">
-        {% trans "Import Dashboard" %}
+        {% trans "Import / Export Dashboard" %}
     </h1>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="thumbnail">
+              <h1 class="text-center">
+                <a href="{% url 'indicators_export_data_elements' %}">
+                    <i class="fa fa-fw fa-download fa-lg"></i>
+                </a>
+              </h1>
+              <div class="caption text-center">
+                <h3>{% trans "Export Data Elements as CSV" %}</h3>
+                <p>
+                    <a href="{% url 'indicators_export_data_elements' %}" class="btn btn-primary btn-multiline">
+                        <i class="fa fa-fw fa-download"></i> {% trans 'export' %}
+                    </a>
+                </p>
+
+              </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="thumbnail">
+              <h1 class="text-center">
+                <a href="{% url 'indicators_export_value_domains' %}">
+                    <i class="fa fa-fw fa-download fa-lg"></i>
+                </a>
+              </h1>
+              <div class="caption text-center">
+                <h3>{% trans "Export Value Domains as CSV" %}</h3>
+                <p>
+                    <a href="{% url 'indicators_export_value_domains' %}" class="btn btn-primary btn-multiline">
+                        <i class="fa fa-fw fa-download"></i> {% trans 'export' %}
+                    </a>
+                </p>
+
+              </div>
+            </div>
+        </div>
+
+    </div>
 
     <div class="row">
         <div class="col-md-4">
