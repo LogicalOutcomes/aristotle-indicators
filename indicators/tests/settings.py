@@ -1,11 +1,14 @@
-import os, sys
+import os
+import sys
+
 from aristotle_mdr.required_settings import *
+
 BASE = os.path.dirname(os.path.dirname(__file__))
 
-sys.path.insert(1,BASE)
-sys.path.insert(1,os.path.join(BASE, "tests"))
+sys.path.insert(1, BASE)
+sys.path.insert(1, os.path.join(BASE, "tests"))
 
-SECRET_KEY = 'inara+vtkprm7@0(fsc$+grbz9-s+tmo9d)e#k(9uf8m281&$7xhdkjr'
+SECRET_KEY = 'ira+vtkprm7@0(fsc$+grbz9-s+tmo9d)e#k(9uf8m281&$7xhdkjr'
 SOUTH_TESTS_MIGRATE = True
 
 MEDIA_ROOT = os.path.join(BASE, "media")
@@ -17,8 +20,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': ':memory:',
-   }
+    }
 }
+
 
 class DisableMigrations(object):
 

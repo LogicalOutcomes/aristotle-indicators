@@ -312,28 +312,40 @@ class ExportDataElements(BaseExport):
     def get_rows(self, writer):
         # header
         yield writer.writerow((
-            'ID',
+            'Name',
+            'UID',
             'Code',
             'Short name',
-            'Name',
-            'Definition',
-            'Value type',
+            'Description',
             'Form name',
-            'Terms of use',
-            'Value domain',
+            'Domain type',
+            'Value type',
+            'Aggregation operator',
+            'Category combination UID',
+            'Url',
+            'Zero is significant',
+            'Option set',
+            'Comment option set',
+            'Aristotle ID',
         ))
         # rows
         for de in DataElement.objects.all():
             yield writer.writerow((
-                de.id,
+                de.name,
+                '',
                 self.get_code(de),
                 de.short_name,
-                de.name,
                 de.definition,
-                self.get_slot(de, ['Value type']),
                 self.get_slot(de, ['Form name', 'Form name EN']),
-                self.get_slot(de, ['Terms of use']),
-                self.get_code(de.valueDomain) if de.valueDomain else None,
+                self.get_slot(de, ['Domain type']),
+                self.get_slot(de, ['Value type']),
+                self.get_slot(de, ['Aggregation operator']),
+                '',
+                '',
+                '',
+                self.get_code(de.valueDomain) if de.valueDomain else '',
+                '',
+                de.id,
             ))
 
 
@@ -343,44 +355,51 @@ class ExportValueDomains(BaseExport):
 
     def get_rows(self, writer):
         yield writer.writerow((
-            'ID',
-            'Code',
-            'Short name',
             'Name',
-            'Value',
-            'Meaning',
+            'OptionSetUID',
+            'OptionSetCode',
+            'OptionName',
+            'OptionUID',
+            'OptionCode',
+            'Aristotle value',
+            'Aristotle Value Domain ID',
         ))
         # rows
         for vd in ValueDomain.objects.all():
             # Permissible Values of the Value Domain
             for pv in vd.permissibleValues:
                 yield writer.writerow((
-                    vd.id,
-                    self.get_code(vd),
-                    vd.short_name,
                     vd.name,
-                    pv.value,
+                    '',
+                    self.get_code(vd),
                     pv.meaning,
+                    '',
+                    '',
+                    pv.value,
+                    vd.id,
                 ))
             # Supplementary Values of the Value Domain
             for sv in vd.supplementaryValues:
                 yield writer.writerow((
-                    vd.id,
-                    self.get_code(vd),
-                    vd.short_name,
                     vd.name,
-                    sv.value,
+                    '',
+                    self.get_code(vd),
                     sv.meaning,
+                    '',
+                    '',
+                    sv.value,
+                    vd.id,
                 ))
             # Empty Value Domain
             if not vd.permissibleValues and not vd.supplementaryValues:
                 yield writer.writerow((
-                    vd.id,
-                    self.get_code(vd),
-                    vd.short_name,
                     vd.name,
-                    None,
-                    None,
+                    '',
+                    self.get_code(vd),
+                    '',
+                    '',
+                    '',
+                    vd.id,
                 ))
 
 
