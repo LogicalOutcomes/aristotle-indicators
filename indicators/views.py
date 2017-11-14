@@ -305,6 +305,9 @@ class BaseExport(SuperUserRequiredMixin, View):
         else:
             return concept.id
 
+    def get_concept_link(self, concept):
+        return self.request.build_absolute_uri(concept.get_absolute_url())
+
 
 class ExportDataElements(BaseExport):
     filename = 'data_elements.csv'
@@ -341,7 +344,7 @@ class ExportDataElements(BaseExport):
                 self.get_slot(de, ['Value type']),
                 self.get_slot(de, ['Aggregation operator']),
                 '',
-                '',
+                self.get_concept_link(de),
                 '',
                 self.get_code(de.valueDomain) if de.valueDomain else '',
                 '',
